@@ -273,14 +273,14 @@ lemma rename_qrhl1:
   assumes "QVar q \<notin> fv c"
   assumes "QVar r \<notin> fv c"
   assumes "qRHL A c d B"
-  shows "qRHL (rename_predicate A (idxq True q) (idxq True r)) c d (rename_predicate B (idxq True q) (idxq True r))"  
+  shows "qRHL (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
   using assms(1) assms(2) assms(3) program.intros(3) program_substitute qRHL_def rename_qrhl10 by auto
 
 lemma rename_qrhl2:
   assumes "QVar q \<notin> fv d"
   assumes "QVar r \<notin> fv d"
   assumes "qRHL A c d B"
-  shows "qRHL (rename_predicate A (idxq False q) (idxq False r)) c d (rename_predicate B (idxq False q) (idxq False r))"
+  shows "qRHL (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
   using assms(1) assms(2) assms(3) program.intros(3) program_substitute qRHL_def rename_qrhl20 by auto 
 
 lemma joint_init_eq0:
@@ -943,6 +943,9 @@ lemma compatible_refl[simp]: "compatible x x"
   using compatible_sym compatible_trans compatible_inexhaust
   using not_finite_existsD by blast
 
+lemma compatible_idx[simp]: \<open>compatible x y \<Longrightarrow> compatible (idx b x) (idx c y)\<close>
+  by (meson compatible_idx compatible_sym compatible_trans)
+
 lemma clean_CVar_case: "is_classical x \<Longrightarrow> CVar (case x of CVar x' \<Rightarrow> x' | QVar q \<Rightarrow> F q) = x" for x F
   using is_classical.simps by auto
 lemma clean_QVar_case: "is_quantum x \<Longrightarrow> QVar (case x of QVar x' \<Rightarrow> x' | CVar q \<Rightarrow> F q) = x" for x F
@@ -956,6 +959,16 @@ lemma subst_vars_rm_valid[simp]:
   assumes "valid_var_subst \<sigma>"
   shows "valid_var_subst (\<sigma>(v:=v))"
   using assms unfolding valid_var_subst_def by simp
+
+lemma valid_var_subst_swap[simp]:
+  assumes \<open>valid_var_subst \<sigma>\<close>
+  assumes \<open>compatible x y\<close>
+  shows \<open>valid_var_subst (Fun.swap x y \<sigma>)\<close>
+  using assms unfolding valid_var_subst_def
+  by (metis compatible_sym compatible_trans swap_apply)
+
+lemma valid_var_subst_id[simp]: \<open>valid_var_subst id\<close>
+  by (simp add: valid_var_subst_def)
 
 lemma subst_vars_v_classical:
   assumes "valid_var_subst \<sigma>"
@@ -1187,8 +1200,7 @@ qed
 
 
 lemma subst_bij_id'[simp]: "substp_bij id A = A"
-  apply (rule substp_bij_id, auto)
-  using valid_var_subst_def by auto
+  by (rule substp_bij_id, auto)
 
 lemma extend_var_subst:
   assumes "inj_on \<sigma> V"
@@ -1641,8 +1653,7 @@ lemma valid_var_subst_idx[simp]:
   assumes "valid_var_subst \<tau>"
   shows "valid_var_subst (idx_var_subst side \<tau>)"
   using assms unfolding valid_var_subst_def idx_var_subst_def
-  apply auto
-  by (metis compatible_idx compatible_sym compatible_trans f_inv_into_f range_eqI)
+  by auto
 
 lemma inj_idx_var_subst[simp]:
   assumes "inj \<tau>"
@@ -1788,6 +1799,16 @@ lemma qrhlelimeq_aux:
   and "(Qstar \<inter> overwr d) \<union> (Qstar - fv d) = Qstar"
   using assms by blast+
 
-
+lemma swap_comp:
+  assumes \<open>x \<noteq> v\<close> \<open>x \<noteq> w\<close> \<open>y \<noteq> v\<close> \<open>y \<noteq> w\<close>
+  shows \<open>Fun.swap x y id o Fun.swap v w id = Fun.swap x y (Fun.swap v w id)\<close>
+  apply (rule ext, rename_tac a)
+  using assms
+  apply (case_tac \<open>a=w\<close>, simp)
+  apply (case_tac \<open>a=x\<close>, simp)
+  apply (case_tac \<open>a=y\<close>, simp)
+  apply (case_tac \<open>a=v\<close>, simp)
+  by simp
 
 end
+

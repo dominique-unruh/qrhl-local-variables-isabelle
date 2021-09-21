@@ -193,16 +193,14 @@ next
   have [simp]: "finite V"
     using rev_finite_subset by blast
 
-  have cofin: "\<exists>x. is_quantum x \<and> P x" if "finite {x. \<not> P x}" for P :: "var \<Rightarrow> bool"
+  have cofin: "\<exists>x. compatible q x \<and> P x" if "finite {x. \<not> P x}" for P :: "var \<Rightarrow> bool" and q
   proof -
-    have "{x. is_quantum x \<and> P x} = Collect is_quantum - {x. \<not> P x}"
+    have "{x. compatible q x \<and> P x} = Collect (compatible q) - {x. \<not> P x}"
       by auto
-    also have "infinite (Collect is_quantum - {x. \<not> P x})"
+    also have "infinite (Collect (compatible q) - {x. \<not> P x})"
       using that apply (rule Diff_infinite_finite)
-      apply (subst asm_rl[of "{x. is_quantum x} = QVar ` UNIV"])
-       apply (auto, metis (full_types) is_classical.intros rangeI var.exhaust)[1]
-      using infinite_qvar by (subst finite_image_iff, auto simp: inj_on_def)
-    finally have "{x. is_quantum x \<and> P x} \<noteq> {}"
+      by (simp add: compatible_inexhaust)
+    finally have "{x. compatible q x \<and> P x} \<noteq> {}"
       by force
     then show ?thesis
       by auto
@@ -213,7 +211,7 @@ next
     apply (rule finite_Union)
     by auto
 
-  obtain r :: var where "is_quantum r"
+  obtain r :: var where [simp]: \<open>compatible q r\<close>
     and "r \<notin> fv (subst C)"
     and "r \<notin> fv (subst' C)"
     and "r \<notin> Rv"
@@ -224,8 +222,10 @@ next
 (* TODO: use existing lemma for this *)
     apply atomize_elim
     apply (rule cofin)
-    by (auto intro: finite_Rv finite_vimageI[unfolded vimage_def, unfolded inj_on_def, rule_format])
-
+    by (auto intro!: finite_Rv finite_vimageI[unfolded vimage_def, unfolded inj_on_def, rule_format])
+  from \<open>compatible q r\<close> have \<open>is_quantum r\<close>
+    using LocalQ.quantum compatible_is_classical by blast
+  
   from LocalQ.quantum \<open>is_quantum r\<close>
   obtain q' r' :: qvar where q': "q = QVar q'" and r': "r = QVar r'"
     by (metis (full_types) is_classical_CVar var.exhaust)
@@ -294,20 +294,20 @@ next
     apply (rule joint_local0_rule[rotated -1])
     using qR \<open>q \<notin> V'\<close> \<open>q \<notin> V'\<close> by (auto simp: Rv_def deidx12_def)
 
-  have [simp]: "QVar q' \<notin> fv (subst' (Local q C))"
-    unfolding subst' by (simp add: q')
-  have [simp]: "QVar r' \<notin> fv (subst' (Local q C))"
-    using \<open>r \<notin> fv (subst' C)\<close> by (simp add: r' subst')
-  have [simp]: "QVar q' \<notin> fv (subst (Local q C))"
-    unfolding subst by (simp add: q')
-  have [simp]: "QVar r' \<notin> fv (subst (Local q C))"
-    using \<open>r \<notin> fv (subst C)\<close> by (simp add: r' subst)
-  have [simp]: "QVar (idxq b r') \<notin> fvp R" for b
+  have [simp]: "QVar q' \<notin> fv (subst' (Local (QVar q') C))"
+    using subst' by (simp add: q')
+  have [simp]: "QVar r' \<notin> fv (subst' (Local (QVar q') C))"
+    using \<open>r \<notin> fv (subst' C)\<close> subst' by (simp add: r' q')
+  have [simp]: "QVar q' \<notin> fv (subst (Local (QVar q') C))"
+    using subst by (simp add: q')
+  have [simp]: "QVar r' \<notin> fv (subst (Local (QVar q') C))"
+    using \<open>r \<notin> fv (subst C)\<close> subst by (simp add: r' q')
+  have idx_r_R[simp]: "idx b r \<notin> fvp R" for b
     apply (cases b)
     using \<open>r \<notin> Rv\<close> by (simp_all add: r' deidx12_def Rv_def)
-  have [simp]: "QVar (idxq b q') \<notin> fvp R" for b
+  have idx_q_R[simp]: "idx b q \<notin> fvp R" for b
     apply (cases b)
-    using qR by (simp_all add: q' Rv_def deidx12_def)
+    using qR by (simp_all add: Rv_def deidx12_def)
 
   have swap_V': "Fun.swap (QVar q') (QVar r') id ` V' = V"
     unfolding V'_def
@@ -316,16 +316,32 @@ next
     by (smt id_def image_iff insertI1 insert_Diff_single insert_commute insert_iff swap_apply(2) swap_apply(3))+
 
   have "R \<sqinter> Eq V
-        = rename_predicate (rename_predicate (R \<sqinter> Eq V') 
-            (idxq True q') (idxq True r')) (idxq False q') (idxq False r')"
-    by (simp add: swap_V' rename_predicate_Eq rename_predicate_indep)
-  
+        = substp_bij (Fun.swap (idx True q) (idx True r)
+                   (Fun.swap (idx False q) (idx False r) id)) (R \<sqinter> Eq V')"
+    apply (subst substp_bij_inter)
+      apply (auto intro!: valid_var_subst_swap compatible_idx)[2]
+    apply (subst substp_bij_id)
+       apply (auto intro!: valid_var_subst_swap compatible_idx)[2]
+     apply (metis id_apply idx_q_R idx_r_R swap_apply(3))
+    using substp_bij_Eq  q' r' apply auto
+    by (metis \<open>compatible q r\<close> \<open>r \<noteq> q\<close> swap_V')
+  also have \<open>\<dots> = substp (Fun.swap (idx True q) (idx True r) id) (substp (Fun.swap (idx False q) (idx False r) id) (R \<sqinter> Eq V'))\<close>
+    apply (subst swap_comp[symmetric])
+        apply auto[4]
+    apply (subst substp_bij_comp[symmetric])
+        apply auto[4]
+    apply (subst substp_substp_bij[where \<tau>=\<open>Fun.swap (idx True q) (idx True r) id\<close>])
+       apply auto[3]
+    apply (subst substp_substp_bij[where \<tau>=\<open>Fun.swap (idx False q) (idx False r) id\<close>])
+    by auto
+
   also have "qRHL \<dots> (subst (Local q C)) (subst' (Local q C)) \<dots>"
-    apply (rule rename_qrhl2)
-      apply auto[2]
+    unfolding q' r'
     apply (rule rename_qrhl1)
       apply auto[2]
-    by (fact qrhl_V')
+    apply (rule rename_qrhl2)
+      apply auto[2]
+    using q' qrhl_V' by blast
 
   finally show "qrhlC V (Local q C)"
     by simp

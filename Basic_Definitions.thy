@@ -275,15 +275,9 @@ axiomatization fvp :: "predicate \<Rightarrow> var set"
   where finite_fvp[simp]: "finite (fvp A)"
 
 notation inf (infixl "\<sqinter>" 70)
-axiomatization Eq :: "var set \<Rightarrow> predicate"
 
-(* TODO deprecated -- use substp instead *)
-axiomatization rename_predicate :: "predicate \<Rightarrow> qvar \<Rightarrow> qvar \<Rightarrow> predicate"
-  where rename_predicate_inter[simp]: "rename_predicate (A\<sqinter>B) q r = rename_predicate A q r \<sqinter> rename_predicate B q r"
-    and rename_predicate_indep: "\<lbrakk> QVar q \<notin> fvp A; QVar r \<notin> fvp A \<rbrakk> \<Longrightarrow> rename_predicate A q r = A"
-    and rename_predicate_Eq: 
-    "rename_predicate (rename_predicate (Eq V) (idxq True q) (idxq True r)) (idxq False q) (idxq False r)
-       = Eq (Fun.swap (QVar q) (QVar r) id ` V)"
+text \<open>The meaning of \<^term>\<open>Eq V\<close> is $V_1 \equiv_q V_2$.\<close>
+axiomatization Eq :: "var set \<Rightarrow> predicate"
 
 axiomatization substp_bij :: "(var \<Rightarrow> var) \<Rightarrow> predicate \<Rightarrow> predicate" where
 (* TODO axioms to assumptions *)

@@ -108,14 +108,14 @@ axiomatization where
 axiomatization where
   rename_qrhl10: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv c 
     \<Longrightarrow> QVar r \<notin> fv c \<Longrightarrow> qrhl A c d B 
-    \<Longrightarrow> qrhl (rename_predicate A (idxq True q) (idxq True r)) c d 
-             (rename_predicate B (idxq True q) (idxq True r))"
+    \<Longrightarrow> qrhl (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d 
+             (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
 
 axiomatization where
   rename_qrhl20: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv d
      \<Longrightarrow> QVar r \<notin> fv d \<Longrightarrow> qrhl A c d B 
-     \<Longrightarrow> qrhl (rename_predicate A (idxq False q) (idxq False r)) c d 
-              (rename_predicate B (idxq False q) (idxq False r))"
+     \<Longrightarrow> qrhl (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d 
+              (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
 
 axiomatization where
   joint_init_eq00: "QVar ` set Q \<subseteq> V \<Longrightarrow> is_quantum' V \<Longrightarrow> qrhl (Eq V) 
@@ -186,6 +186,17 @@ axiomatization where qrhl_subst_left0:
 axiomatization where qrhl_subst_right0:
   "bij \<tau> \<Longrightarrow> valid_var_subst \<tau> \<Longrightarrow> program c \<Longrightarrow> program d \<Longrightarrow> qrhl A c d B \<Longrightarrow>
    qrhl (substp_bij (idx_var_subst False \<tau>) A) c (full_subst_vars \<tau> d) (substp_bij (idx_var_subst False \<tau>) B)"
+
+(* TODO: check if obvious/proven *)
+axiomatization where substp_bij_Eq:
+  \<open>q' \<noteq> r' \<Longrightarrow> compatible (QVar q') (QVar r')
+   \<Longrightarrow> substp_bij (Fun.swap (idx True (QVar q')) (idx True (QVar r'))
+               (Fun.swap (idx False (QVar q')) (idx False (QVar r')) id)) (Eq V)
+         = Eq (Fun.swap (QVar q) (QVar r) id ` V)\<close>
+
+(* TODO: check if obvious/proven *)
+axiomatization where substp_bij_inter:
+  \<open>bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<sigma> (A\<sqinter>B) = substp_bij \<sigma> A \<sqinter> substp_bij \<sigma> B\<close>
 
 axiomatization where compatible_idx:
   "compatible v (idx side v)"
