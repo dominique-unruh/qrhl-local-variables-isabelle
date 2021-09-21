@@ -1,9 +1,11 @@
+section \<open>Basic Definitions\<close>
+
 theory Basic_Definitions
   imports Main
 begin
 
 
-section "Variables"
+subsection "Variables"
 
 typedecl qvar
 axiomatization where infinite_qvar: "infinite (UNIV::qvar set)"
@@ -43,7 +45,7 @@ axiomatization compatible :: "var \<Rightarrow> var \<Rightarrow> bool"
 \<comment> \<open>\<^term>\<open>compatible x y\<close> means that \<^term>\<open>x\<close> and \<^term>\<open>y\<close> have the same type
     and are both classical or both quantum\<close>
 
-section "Expressions"
+subsection "Expressions"
 
 typedecl expression
 
@@ -53,7 +55,7 @@ and ex_constant: "\<exists>e. fve e = {}"
 
 definition "some_constant = (SOME e. fve e = {})"
 
-section "Contexts"
+subsection "Contexts"
 
 datatype "context" = 
   Hole nat | Assign "cvar list" expression | Sample "cvar list" expression | Skip
@@ -102,10 +104,10 @@ fun init :: "var \<Rightarrow> context" where
 | "init (CVar c) = Assign [c] some_constant"
 
 text \<open>A form inits of \<^term>\<open>init\<close> that initializes several variables is
-defined in theory Helping_Lemmas\<close>
+defined in theory \<open>Helping_Lemmas\<close>\<close>
 
 
-section "Variable sets"
+subsection "Variable sets"
 
 fun fv :: "context \<Rightarrow> var set" where
   "fv (Hole i) = {}"
@@ -204,7 +206,7 @@ fun localvars :: "context \<Rightarrow> var set" where
 | "localvars (Seq p1 p2) = localvars p1 \<union> localvars p2"
 | "localvars (Local v p) = insert v (localvars p)"
 
-section \<open>Variable Substitutions\<close>
+subsection \<open>Variable Substitutions\<close>
 
 axiomatization subst_vars_e :: "(var\<Rightarrow>var) \<Rightarrow> expression \<Rightarrow> expression"
 
@@ -261,7 +263,7 @@ inductive no_conflict :: "(var\<Rightarrow>var) \<Rightarrow> context \<Rightarr
 | nc_Skip: "no_conflict \<sigma> (Skip)"
 
 
-section \<open>Predicates\<close>
+subsection \<open>Predicates\<close>
 
 typedecl predicate
 axiomatization where 
@@ -292,7 +294,7 @@ definition "substp \<sigma> A = (let \<tau> = (SOME \<tau>. bij \<tau> \<and> va
 
 
 
-section \<open>Denotations and qRHL\<close>
+subsection \<open>Denotations and qRHL\<close>
 
 
 axiomatization denot_eq :: "context \<Rightarrow> context \<Rightarrow> bool"

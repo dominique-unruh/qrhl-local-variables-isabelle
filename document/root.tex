@@ -1,0 +1,43 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{isabelle,isabellesym}
+\usepackage{xr}
+\usepackage{pdfsetup}
+
+\externaldocument[localvars:]{localvars}
+\externaldocument[qrhl:]{qrhl}
+
+% urls in roman style, theory text in math-similar italics
+\urlstyle{rm}
+\isabellestyle{it}
+
+% for uniform font size
+%\renewcommand{\isastyle}{\isastyleminor}
+
+\newcommand\lautoref[1]{\autoref{localvars:#1} in the paper}
+\newcommand\lautoeqref[2]{\autoref*{localvars:#1}\,\eqref*{localvars:#2} in the paper}
+\newcommand\qautoref[1]{\autoref{qrhl:#1} in the qRHL paper}
+
+\begin{document}
+
+\title{Local Variables}
+\author{Dominique Unruh}
+\maketitle
+
+\tableofcontents
+
+% sane default for proof documents
+\parindent 0pt\parskip 0.5ex
+
+% generated text of all theories
+\input{session}
+
+% optional bibliography
+%\bibliographystyle{abbrv}
+%\bibliography{root}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

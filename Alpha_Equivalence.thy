@@ -1,5 +1,7 @@
+section \<open>Alpha Equivalence\<close>
+
 theory Alpha_Equivalence
-imports Helping_Lemmas
+  imports Helping_Lemmas
 begin
 
 inductive alpha_equivalent :: "context \<Rightarrow> context \<Rightarrow> bool" (infix "=a=" 50) where

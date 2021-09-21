@@ -1,3 +1,5 @@
+section \<open>Adversary Rule\<close>
+
 theory Adversary_Rule
   imports Helping_Lemmas
 begin

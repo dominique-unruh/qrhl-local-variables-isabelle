@@ -1,3 +1,5 @@
+section \<open>Assumptions\<close>
+
 theory Assumptions
   imports Basic_Definitions
 begin
@@ -129,7 +131,8 @@ axiomatization where
 axiomatization where
   local_idem0[simp]: "program C \<Longrightarrow> denot_eq (Local x (Local x C)) (Local x C)"
 
-(* lemma:local.swap *)
+
+text \<open>\lautoeqref{hgdfaysdgfyasdgfasdfh}{lemma:local.swap}\<close>
 axiomatization where
   local_swap0: "program C \<Longrightarrow> denot_eq (Local x (Local y C)) (Local y (Local x C))"
 

@@ -1,3 +1,7 @@
+section \<open>Commutative Idempotent Modulo\<close>
+
+text \<open>Auxiliary theorem: A formalization of families of operations that are commutative and idempotent modulo an equivalent relation \<^term>\<open>R\<close>.\<close>
+
 theory Comm_Idem_Modulo
   imports Main
 begin

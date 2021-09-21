@@ -1,3 +1,5 @@
+section \<open>Rename Locals\<close>
+
 theory Rename_Locals
   imports Alpha_Equivalence
 begin

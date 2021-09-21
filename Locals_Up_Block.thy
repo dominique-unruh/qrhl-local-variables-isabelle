@@ -1,3 +1,5 @@
+section \<open>Locals Up Block\<close>
+
 theory Locals_Up_Block
   imports Helping_Lemmas
 begin

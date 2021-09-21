@@ -1,3 +1,5 @@
+section \<open>Helping Lemmas\<close>
+
 theory Helping_Lemmas
   imports Assumptions Comm_Idem_Modulo
 begin
