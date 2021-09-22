@@ -219,16 +219,17 @@ next
     and "r \<notin> V"
     and [simp]: "\<And>i. i\<in>holes C \<Longrightarrow> r \<notin> fv (s i)"
     and [simp]: "\<And>i. i\<in>holes C \<Longrightarrow> r \<notin> fv (s' i)"
-(* TODO: use existing lemma for this *)
     apply atomize_elim
     apply (rule cofin)
     by (auto intro!: finite_Rv finite_vimageI[unfolded vimage_def, unfolded inj_on_def, rule_format])
-  from \<open>compatible q r\<close> have \<open>is_quantum r\<close>
+  from \<open>compatible q r\<close> have [simp]: \<open>is_quantum r\<close>
     using LocalQ.quantum compatible_is_classical by blast
-  
+
   from LocalQ.quantum \<open>is_quantum r\<close>
   obtain q' r' :: qvar where q': "q = QVar q'" and r': "r = QVar r'"
     by (metis (full_types) is_classical_CVar var.exhaust)
+  with \<open>compatible q r\<close> have [simp]: \<open>compatible (QVar q') (QVar r')\<close>
+    by simp
 
   define V' where
     "V' = (if q\<in>V then insert r V - {q} else V)"
@@ -338,9 +339,9 @@ next
   also have "qRHL \<dots> (subst (Local q C)) (subst' (Local q C)) \<dots>"
     unfolding q' r'
     apply (rule rename_qrhl1)
-      apply auto[2]
+      apply auto[3]
     apply (rule rename_qrhl2)
-      apply auto[2]
+      apply auto[3]
     using q' qrhl_V' by blast
 
   finally show "qrhlC V (Local q C)"

@@ -4,6 +4,8 @@ theory Basic_Definitions
   imports Main
 begin
 
+text \<open>Enabling infix notation for (binary) infimums.\<close>
+notation inf (infixl "\<sqinter>" 70)
 
 subsection "Variables"
 
@@ -265,31 +267,29 @@ inductive no_conflict :: "(var\<Rightarrow>var) \<Rightarrow> context \<Rightarr
 
 subsection \<open>Predicates\<close>
 
+text \<open>A type for representing predicates (pre-/postconditions).\<close>
 typedecl predicate
-axiomatization where 
-  instance_predicate_lattice: "OFCLASS(predicate, bounded_lattice_class)"
-instance predicate :: bounded_lattice
-  by (rule instance_predicate_lattice)
+
+text \<open>This allows us to use \<open>A\<sqinter>B\<close> to write the intersection of predicates.\<close>
+instance predicate :: inf..
+text \<open>This allows us to use \<open>A\<le>B\<close> to write the inclusion (implication) of predicates.\<close>
+instance predicate :: ord..
+text \<open>This allows us to use \<open>\<top>\<close> to write the inclusion (implication) of predicates.\<close>
+instance predicate :: top..
 
 axiomatization fvp :: "predicate \<Rightarrow> var set"
-  where finite_fvp[simp]: "finite (fvp A)"
-
-notation inf (infixl "\<sqinter>" 70)
 
 text \<open>The meaning of \<^term>\<open>Eq V\<close> is $V_1 \equiv_q V_2$.\<close>
 axiomatization Eq :: "var set \<Rightarrow> predicate"
 
-axiomatization substp_bij :: "(var \<Rightarrow> var) \<Rightarrow> predicate \<Rightarrow> predicate" where
-(* TODO axioms to assumptions *)
-  substp_bij_id: "bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> (\<And>x. x\<in>fvp A \<Longrightarrow> \<sigma> x = x) \<Longrightarrow> substp_bij \<sigma> A = A"
-and substp_bij_comp: "bij \<tau> \<Longrightarrow> bij \<sigma> \<Longrightarrow> valid_var_subst \<tau> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<tau> (substp_bij \<sigma> A) = substp_bij (\<tau> \<circ> \<sigma>) A"
+text \<open>Applying variable substitutions on predicates. This constant is only define when the substitution
+  is a bijection. (This is a simpler concept and stating all assumptions only for this case makes
+  the trust-base smaller.) Full-fledged substitution is derived from this below.\<close>
+axiomatization substp_bij :: "(var \<Rightarrow> var) \<Rightarrow> predicate \<Rightarrow> predicate"
 
 definition "substp \<sigma> A = (let \<tau> = (SOME \<tau>. bij \<tau> \<and> valid_var_subst \<tau> \<and> (\<forall>x\<in>fvp A. \<tau> x = \<sigma> x)) in substp_bij \<tau> A)"
 
-
-
 subsection \<open>Denotations and qRHL\<close>
-
 
 axiomatization denot_eq :: "context \<Rightarrow> context \<Rightarrow> bool"
   where denot_eq_refl[simp]: "program C \<Longrightarrow> denot_eq C C"
@@ -299,10 +299,15 @@ axiomatization denot_eq :: "context \<Rightarrow> context \<Rightarrow> bool"
 
 axiomatization qrhl :: "predicate \<Rightarrow> context \<Rightarrow> context \<Rightarrow> predicate \<Rightarrow> bool"
 
+text \<open>More convenient derived notion of denotational equivalence that can also be applied to contexts.
+  (Their holes are implicitly filled with skips.) In contrast, \<^const>\<open>denot_eq\<close> is only defined when
+  its arguments are programs.\<close>
 definition denot_eq' :: "context \<Rightarrow> context \<Rightarrow> bool" (infix "=d=" 50) where
   "C =d= D \<longleftrightarrow> denot_eq (substitute C (\<lambda>_. Skip)) (substitute D (\<lambda>_. Skip))"
 
-
+text \<open>More convenient derive definition of qRHL judgments that can also be applied to contexts.
+  (Their holes are implicitly filled with skips.) In contrast, \<^const>\<open>qrhl\<close> is only defined when
+  its arguments are programs.\<close>
 definition qRHL :: "predicate \<Rightarrow> context \<Rightarrow> context \<Rightarrow> predicate \<Rightarrow> bool" where
   "qRHL A C D B \<longleftrightarrow> qrhl A (substitute C (\<lambda>_. Skip)) (substitute D (\<lambda>_. Skip)) B"
 

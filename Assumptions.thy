@@ -4,6 +4,13 @@ theory Assumptions
   imports Basic_Definitions
 begin
 
+text \<open>This states that predicates form a bounded lattice (i.e., a lattice with top and bottom elements).\<close>
+axiomatization where instance_predicate_lattice:
+  "OFCLASS(predicate, bounded_lattice_class)"
+
+axiomatization where finite_fvp[simp]:
+  "finite (fvp A)"
+
 axiomatization where
   compatible_trans[trans]: "compatible x y \<Longrightarrow> compatible y z \<Longrightarrow> compatible x z"
 and compatible_sym[sym]: "compatible x y \<Longrightarrow> compatible y x"
@@ -12,10 +19,8 @@ and compatible_inexhaust: "infinite {x'. compatible x x'}"
 axiomatization where 
   compatible_is_classical: "compatible x y \<Longrightarrow> is_classical x \<longleftrightarrow> is_classical y"
 
-
 axiomatization where
   seq0: "program p1 \<Longrightarrow> program p2 \<Longrightarrow> qrhl A p1 p2 B \<Longrightarrow> qrhl B p1' p2' C \<Longrightarrow> qrhl A (p1; p1') (p2; p2') C"
-
 
 axiomatization where
   conseq_post0: "program p1 \<Longrightarrow> program p2 \<Longrightarrow> qrhl A p1 p2 B \<Longrightarrow> B \<le> C \<Longrightarrow> qrhl A p1 p2 C"
@@ -106,16 +111,16 @@ axiomatization where
     \<Longrightarrow> qrhl (A \<sqinter> Eq S) (Local v c) (Local v d) (A \<sqinter> Eq R)"
 
 axiomatization where
-  rename_qrhl10: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv c 
+  rename_qrhl10: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv c \<Longrightarrow> compatible (QVar q) (QVar r)
     \<Longrightarrow> QVar r \<notin> fv c \<Longrightarrow> qrhl A c d B 
-    \<Longrightarrow> qrhl (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d 
-             (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
+    \<Longrightarrow> qrhl (substp_bij (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d 
+             (substp_bij (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
 
 axiomatization where
-  rename_qrhl20: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv d
+  rename_qrhl20: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv d \<Longrightarrow> compatible (QVar q) (QVar r)
      \<Longrightarrow> QVar r \<notin> fv d \<Longrightarrow> qrhl A c d B 
-     \<Longrightarrow> qrhl (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d 
-              (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
+     \<Longrightarrow> qrhl (substp_bij (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d 
+              (substp_bij (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
 
 axiomatization where
   joint_init_eq00: "QVar ` set Q \<subseteq> V \<Longrightarrow> is_quantum' V \<Longrightarrow> qrhl (Eq V) 
@@ -130,7 +135,6 @@ axiomatization where
 
 axiomatization where
   local_idem0[simp]: "program C \<Longrightarrow> denot_eq (Local x (Local x C)) (Local x C)"
-
 
 text \<open>\lautoeqref{hgdfaysdgfyasdgfasdfh}{lemma:local.swap}\<close>
 axiomatization where
@@ -163,15 +167,9 @@ axiomatization where subst_vars_e_cong:
   "valid_var_subst \<sigma> \<Longrightarrow> (\<And>x. x\<in>CVar ` fve e \<Longrightarrow> \<sigma> x = \<tau> x)
       \<Longrightarrow> subst_vars_e \<sigma> e = subst_vars_e \<tau> e"
 
-(* TODO prove in paper *)
-axiomatization where 
-  full_subst_vars_denot_eq: "program c \<Longrightarrow> program d \<Longrightarrow> bij \<sigma> 
-    \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> denot_eq (full_subst_vars \<sigma> c) (full_subst_vars \<sigma> d)"
-
-(* lemma:full_subst_vars *)
-(* TODO: should be provable from full_subst_vars_denot_eq *)
-axiomatization where
-  full_subst_vars_id0: "program c \<Longrightarrow> bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> var_subst_dom \<sigma> \<inter> fv c = {}
+text \<open>\qautoref{lemma:full_subst_vars}\<close>
+axiomatization where full_subst_vars_id0: 
+  "program c \<Longrightarrow> bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> var_subst_dom \<sigma> \<inter> fv c = {}
         \<Longrightarrow> denot_eq (full_subst_vars \<sigma> c) c"
 
 axiomatization where subst_vars_e_id[simp]: "subst_vars_e (\<lambda>x. x) e = e"
@@ -197,6 +195,12 @@ axiomatization where substp_bij_Eq:
 (* TODO: check if obvious/proven *)
 axiomatization where substp_bij_inter:
   \<open>bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<sigma> (A\<sqinter>B) = substp_bij \<sigma> A \<sqinter> substp_bij \<sigma> B\<close>
+
+axiomatization where substp_bij_id:
+  "bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> (\<And>x. x\<in>fvp A \<Longrightarrow> \<sigma> x = x) \<Longrightarrow> substp_bij \<sigma> A = A"
+
+axiomatization where substp_bij_comp:
+  "bij \<tau> \<Longrightarrow> bij \<sigma> \<Longrightarrow> valid_var_subst \<tau> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<tau> (substp_bij \<sigma> A) = substp_bij (\<tau> \<circ> \<sigma>) A"
 
 axiomatization where compatible_idx:
   "compatible v (idx side v)"

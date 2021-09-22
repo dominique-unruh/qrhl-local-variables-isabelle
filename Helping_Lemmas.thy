@@ -4,6 +4,9 @@ theory Helping_Lemmas
   imports Assumptions Comm_Idem_Modulo
 begin
 
+instance predicate :: bounded_lattice
+  by (rule instance_predicate_lattice)
+
 lemma idx_inj[simp]: "idx b x = idx c y \<longleftrightarrow> b = c \<and> x = y"
   apply (cases x; cases y) 
   using idxq_inj idxc_inj by auto
@@ -268,20 +271,6 @@ lemma joint_local0_rule:
   assumes "qRHL (A \<sqinter> Eq (insert v S)) c d (A \<sqinter> Eq (insert v R))"
   shows "qRHL (A \<sqinter> Eq S) (Local v c) (Local v d) (A \<sqinter> Eq R)"
   using assms(1) assms(2) assms(3) assms(4) assms(5) joint_local0_rule0 program.intros(3) program_substitute qRHL_def by auto
-
-lemma rename_qrhl1:
-  assumes "QVar q \<notin> fv c"
-  assumes "QVar r \<notin> fv c"
-  assumes "qRHL A c d B"
-  shows "qRHL (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
-  using assms(1) assms(2) assms(3) program.intros(3) program_substitute qRHL_def rename_qrhl10 by auto
-
-lemma rename_qrhl2:
-  assumes "QVar q \<notin> fv d"
-  assumes "QVar r \<notin> fv d"
-  assumes "qRHL A c d B"
-  shows "qRHL (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
-  using assms(1) assms(2) assms(3) program.intros(3) program_substitute qRHL_def rename_qrhl20 by auto 
 
 lemma joint_init_eq0:
   assumes "QVar ` set Q \<subseteq> V"
@@ -1345,7 +1334,6 @@ proof -
     using that by auto
 qed
 
-
 lemma substp_substp_bij:
   assumes "bij \<tau>" and "valid_var_subst \<tau>" and "\<forall>x\<in>fvp A. \<tau> x = \<sigma> x"
   shows "substp \<sigma> A = substp_bij \<tau> A"
@@ -1384,7 +1372,6 @@ proof -
   finally show ?thesis
     by -
 qed
-
 
 lemma substp_cong:
   assumes eq: "\<And>x. x \<in> fvp A \<Longrightarrow> \<sigma> x = \<tau> x"
@@ -1430,6 +1417,22 @@ proof -
     by -
 qed
 
+
+lemma rename_qrhl1:
+  assumes \<open>compatible (QVar q) (QVar r)\<close>
+  assumes "QVar q \<notin> fv c"
+  assumes "QVar r \<notin> fv c"
+  assumes "qRHL A c d B"
+  shows "qRHL (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
+  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>Fun.swap (idx True (QVar q)) (idx True (QVar r)) id\<close>] program_substitute qRHL_def rename_qrhl10 by (auto simp del: idx.simps)
+
+lemma rename_qrhl2:
+  assumes \<open>compatible (QVar q) (QVar r)\<close>
+  assumes "QVar q \<notin> fv d"
+  assumes "QVar r \<notin> fv d"
+  assumes "qRHL A c d B"
+  shows "qRHL (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
+  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>Fun.swap (idx False (QVar q)) (idx False (QVar r)) id\<close>] program_substitute qRHL_def rename_qrhl20 by (auto simp del: idx.simps)
 
 lemma CVar_subst_vars_c[simp]: 
   assumes "valid_var_subst \<sigma>"
