@@ -136,7 +136,7 @@ axiomatization where
 axiomatization where
   local_idem0[simp]: "program C \<Longrightarrow> denot_eq (Local x (Local x C)) (Local x C)"
 
-text \<open>\lautoeqref{hgdfaysdgfyasdgfasdfh}{lemma:local.swap}\<close>
+(* text \<open>\lautoeqref{hgdfaysdgfyasdgfasdfh}{lemma:local.swap}\<close> *)
 axiomatization where
   local_swap0: "program C \<Longrightarrow> denot_eq (Local x (Local y C)) (Local y (Local x C))"
 
@@ -167,7 +167,7 @@ axiomatization where subst_vars_e_cong:
   "valid_var_subst \<sigma> \<Longrightarrow> (\<And>x. x\<in>CVar ` fve e \<Longrightarrow> \<sigma> x = \<tau> x)
       \<Longrightarrow> subst_vars_e \<sigma> e = subst_vars_e \<tau> e"
 
-text \<open>\qautoref{lemma:full_subst_vars}\<close>
+(* text \<open>\qautoref{lemma:full_subst_vars}\<close> *)
 axiomatization where full_subst_vars_id0: 
   "program c \<Longrightarrow> bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> var_subst_dom \<sigma> \<inter> fv c = {}
         \<Longrightarrow> denot_eq (full_subst_vars \<sigma> c) c"
@@ -185,14 +185,12 @@ axiomatization where qrhl_subst_right0:
   "bij \<tau> \<Longrightarrow> valid_var_subst \<tau> \<Longrightarrow> program c \<Longrightarrow> program d \<Longrightarrow> qrhl A c d B \<Longrightarrow>
    qrhl (substp_bij (idx_var_subst False \<tau>) A) c (full_subst_vars \<tau> d) (substp_bij (idx_var_subst False \<tau>) B)"
 
-(* TODO: check if obvious/proven *)
 axiomatization where substp_bij_Eq:
   \<open>q' \<noteq> r' \<Longrightarrow> compatible (QVar q') (QVar r')
    \<Longrightarrow> substp_bij (Fun.swap (idx True (QVar q')) (idx True (QVar r'))
                (Fun.swap (idx False (QVar q')) (idx False (QVar r')) id)) (Eq V)
          = Eq (Fun.swap (QVar q) (QVar r) id ` V)\<close>
 
-(* TODO: check if obvious/proven *)
 axiomatization where substp_bij_inter:
   \<open>bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<sigma> (A\<sqinter>B) = substp_bij \<sigma> A \<sqinter> substp_bij \<sigma> B\<close>
 

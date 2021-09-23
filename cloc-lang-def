@@ -1,0 +1,8 @@
+Isabelle
+    filter remove_between_general (* *)
+    extension thy
+    3rd_gen_scale 5.00
+qrhl
+    filter remove_matches ^\s*#
+    extension qrhl
+    3rd_gen_scale 5.00
