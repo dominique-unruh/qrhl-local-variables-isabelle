@@ -17,7 +17,7 @@ inductive alpha_equivalent :: "context \<Rightarrow> context \<Rightarrow> bool"
 | ae_Seq: "p1 =a= p1' \<Longrightarrow> p2 =a= p2' \<Longrightarrow> Seq p1 p2 =a= Seq p1' p2'"
 | ae_Local: "compatible y z \<Longrightarrow> compatible x z \<Longrightarrow> z \<noteq> x \<Longrightarrow> z \<noteq> y \<Longrightarrow>
     z \<notin> vars p1 \<Longrightarrow> z \<notin> vars p2 \<Longrightarrow> 
-    full_subst_vars (Fun.swap x z id) p1 =a= full_subst_vars (Fun.swap y z id) p2 \<Longrightarrow>
+    full_subst_vars (transpose x z) p1 =a= full_subst_vars (transpose y z) p2 \<Longrightarrow>
     Local x p1 =a= Local y p2"
 
 
@@ -50,21 +50,21 @@ proof induction
   then have "z \<notin> fv p1" and "z \<notin> fv p2"
     using fv_vars by auto
   note [simp] = \<open>compatible x z\<close> \<open>compatible y z\<close>
-  have [simp]: "valid_var_subst (Fun.swap x z id)" if "compatible x z" for x z
+  have [simp]: "valid_var_subst (transpose x z)" if "compatible x z" for x z
     unfolding valid_var_subst_def
-    by (metis compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) that)
-  have [simp]: "inj_on (Fun.swap x z id) X" for x :: 'z and z X
-    by (metis bij_def bij_id bij_swap_iff injD inj_onI)
+    using that valid_var_subst_def valid_var_subst_transpose by blast
+  have [simp]: "inj_on (transpose x z) X" for x :: 'z and z X
+    by simp
   from ae_Local.IH
-  have "Fun.swap x z id ` fv p1 = Fun.swap y z id ` fv p2"
+  have "transpose x z ` fv p1 = transpose y z ` fv p2"
     by (subst (asm) fv_full_subst_vars; simp)+
   with \<open>z \<notin> fv p1\<close> \<open>z \<notin> fv p2\<close>
   have "fv p1 - {x} = fv p2 - {y}"
     apply auto
-    apply (smt \<open>\<And>z x X. inj_on (Fun.swap x z id) X\<close> fun_upd_apply inj_vimage_image_eq swap_def vimage_eq)
-    apply (metis bij_def bij_id bij_swap_iff inj_vimage_image_eq swap_apply(2) swap_apply(3) vimageE vimageI)
-    apply (metis \<open>\<And>z x X. inj_on (Fun.swap x z id) X\<close> fun_upd_apply inj_image_mem_iff swap_apply(3) swap_def)
-    by (metis bij_def bij_id bij_swap_iff inj_vimage_image_eq swap_apply(2) swap_apply(3) vimageE vimageI)
+       apply (metis in_transpose_image_iff transpose_apply_other transpose_def)
+      apply (metis imageI in_transpose_image_iff transpose_eq_iff)
+     apply (metis in_transpose_image_iff transpose_def)
+    by (metis in_transpose_image_iff transpose_eq_iff)
   then show ?case
     by simp
 qed auto
@@ -117,31 +117,31 @@ lemma alpha_eq_full_subst:
   using assms(3)
 proof (induction)
   case (ae_Local y z x p1 p2)
-  have "full_subst_vars (Fun.swap (f x) (f z) id) (full_subst_vars f p1)
-        = full_subst_vars (Fun.swap (f x) (f z) id \<circ> f) p1"
+  have "full_subst_vars (transpose (f x) (f z)) (full_subst_vars f p1)
+        = full_subst_vars (transpose (f x) (f z) \<circ> f) p1"
     using valid by (rule full_subst_vars_compose)
-  also have "Fun.swap (f x) (f z) id \<circ> f = f \<circ> Fun.swap x z id"
-    unfolding Fun.swap_def o_def
+  also have "transpose (f x) (f z) \<circ> f = f \<circ> transpose x z"
+    unfolding transpose_def o_def
     using inj inj_eq by fastforce
-  also have "full_subst_vars (f \<circ> Fun.swap x z id) p1 
-           = full_subst_vars f (full_subst_vars (Fun.swap x z id) p1)"
+  also have "full_subst_vars (f \<circ> transpose x z) p1 
+           = full_subst_vars f (full_subst_vars (transpose x z) p1)"
     apply (rule full_subst_vars_compose[symmetric])
-    by (metis ae_Local.hyps(2) compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-  also have "\<dots> =a= full_subst_vars f (full_subst_vars (Fun.swap y z id) p2)"
+    by (simp add: ae_Local.hyps(2))
+  also have "\<dots> =a= full_subst_vars f (full_subst_vars (transpose y z) p2)"
     by (rule ae_Local.IH)
   thm ae_Local.IH
-  also have "\<dots> = full_subst_vars (f \<circ> Fun.swap y z id) p2"
+  also have "\<dots> = full_subst_vars (f \<circ> transpose y z) p2"
     apply (rule full_subst_vars_compose)
-    by (metis ae_Local.hyps(1) compatible_refl compatible_sym id_def swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-  also have "f \<circ> Fun.swap y z id = Fun.swap (f y) (f z) id \<circ> f"
-    unfolding Fun.swap_def o_def
+    by (simp add: ae_Local.hyps(1))
+  also have "f \<circ> transpose y z = transpose (f y) (f z) \<circ> f"
+    unfolding transpose_def o_def
     using inj inj_eq by fastforce
-  also have "full_subst_vars (Fun.swap (f y) (f z) id \<circ> f) p2
-           = full_subst_vars (Fun.swap (f y) (f z) id) (full_subst_vars f p2)"
+  also have "full_subst_vars (transpose (f y) (f z) \<circ> f) p2
+           = full_subst_vars (transpose (f y) (f z)) (full_subst_vars f p2)"
     using valid by (rule full_subst_vars_compose[symmetric])
   finally 
-  have *: "full_subst_vars (Fun.swap (f x) (f z) id) (full_subst_vars f p1) =a=
-    full_subst_vars (Fun.swap (f y) (f z) id) (full_subst_vars f p2)"
+  have *: "full_subst_vars (transpose (f x) (f z)) (full_subst_vars f p1) =a=
+    full_subst_vars (transpose (f y) (f z)) (full_subst_vars f p2)"
     by -
 
   show ?case
@@ -232,40 +232,35 @@ next
     using Local.prems by (atomize_elim, rule_tac fresh_compatible, simp)
   have "compatible y z"
     using \<open>compatible x y\<close> \<open>compatible x z\<close> compatible_sym compatible_trans by blast
-  define c'' where "c'' = full_subst_vars (Fun.swap y z id o Fun.swap x z id) c'"
+  define c'' where "c'' = full_subst_vars (transpose y z o transpose x z) c'"
 
-  have valid_swap_comp: "valid_var_subst (Fun.swap y z id \<circ> Fun.swap x z id)"
+  have valid_swap_comp: "valid_var_subst (transpose y z \<circ> transpose x z)"
     unfolding valid_var_subst_def apply auto
-    by (smt Fun_swap_id_inv \<open>compatible x y\<close> \<open>compatible x z\<close> bij_betw_imp_inj_on bij_id bij_swap_iff compatible_refl compatible_sym compatible_trans inv_f_eq swap_apply(3))
+  by (metis \<open>compatible x y\<close> \<open>compatible x z\<close> \<open>compatible y z\<close> compatible_refl compatible_sym transpose_apply_second transpose_def)
 
-  have swap_comp: "(Fun.swap y z id \<circ> (Fun.swap y z id \<circ> Fun.swap x z id)) = Fun.swap x z id"
-    apply (rule ext)
-    by (simp add: comp_swap pointfree_idE)
-  have cc'': "full_subst_vars (Fun.swap x z id) c =a= full_subst_vars (Fun.swap y z id) c''"
+  have cc'': "full_subst_vars (transpose x z) c =a= full_subst_vars (transpose y z) c''"
     unfolding c''_def
     apply (subst full_subst_vars_compose, fact valid_swap_comp)
-    apply (subst swap_comp)
+    apply (simp add: flip: comp_assoc)
     using _ _ cc' apply (rule alpha_eq_full_subst)
-    apply (metis \<open>compatible x z\<close> compatible_refl compatible_sym id_def swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    by simp
+    by (simp_all add: \<open>compatible x z\<close>)
 
-  have "(Fun.swap y z id \<circ> Fun.swap x z id) ((Fun.swap x z id \<circ> Fun.swap y z id) z) \<notin> vars c''"
+  have "(transpose y z \<circ> transpose x z) ((transpose x z \<circ> transpose y z) z) \<notin> vars c''"
     unfolding c''_def 
     apply (subst vars_full_subst_vars[OF valid_swap_comp])
     apply (subst inj_image_mem_iff)
-    apply (simp add: comp_swap)
+     apply (simp add: inj_compose)
     using \<open>x \<noteq> y\<close> \<open>y \<notin> vars c'\<close> \<open>z \<noteq> y\<close> by auto
   then have "z \<notin> vars c''"
-    by (metis comp_id comp_swap id_apply swap_apply(2) swap_apply(3) swap_commute)
+    by simp
 
   have c''avoid: "localvars c'' \<inter> avoid = {}"
   proof auto
     fix v assume "v \<in> localvars c''" and "v \<in> avoid"
-    then have "v \<in> (Fun.swap y z id o Fun.swap x z id) ` localvars c'"
+    then have "v \<in> (transpose y z o transpose x z) ` localvars c'"
       unfolding c''_def by simp
-    then have vc': "(Fun.swap x z id o Fun.swap y z id) v \<in> localvars c'"
-      apply auto
-      by (metis Fun_swap_id_inv bij_id bij_inv_eq_iff bij_swap_iff)
+    then have vc': "(transpose x z o transpose y z) v \<in> localvars c'"
+      by auto
     from \<open>v \<in> avoid\<close> \<open>z \<notin> avoid\<close> \<open>y \<notin> avoid\<close> have "v \<noteq> z" and "v \<noteq> y"
       by auto
     from vc' \<open>x\<noteq>y\<close> \<open>v\<noteq>z\<close> \<open>z \<notin> localvars c'\<close>
@@ -292,8 +287,8 @@ lemma ae_Local_arbitrary_z:
     and "z \<noteq> y"
     and "z \<notin> vars c"
     and "z \<notin> vars d"
-  shows "full_subst_vars (Fun.swap x z id) c =a=
-         full_subst_vars (Fun.swap y z id) d"
+  shows "full_subst_vars (transpose x z) c =a=
+         full_subst_vars (transpose y z) d"
 proof -
   from ae 
   obtain z' where [simp]: "compatible y z'"
@@ -302,34 +297,31 @@ proof -
     and "z' \<noteq> y"
     and "z' \<notin> vars c"
     and "z' \<notin> vars d"
-    and ae': "full_subst_vars (Fun.swap x z' id) c =a=
-              full_subst_vars (Fun.swap y z' id) d"
+    and ae': "full_subst_vars (transpose x z') c =a=
+              full_subst_vars (transpose y z') d"
     apply (rule alpha_eq_cases)
     by auto
 
-  have [simp]: "valid_var_subst (Fun.swap z z' id)"
-               "valid_var_subst (Fun.swap x z' id)"
-               "valid_var_subst (Fun.swap y z' id)"
-               "valid_var_subst (Fun.swap x z id)"
-               "valid_var_subst (Fun.swap y z id)"
-    apply (smt \<open>compatible y z'\<close> assms(2) compatible_refl compatible_sym compatible_trans id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    apply (metis \<open>compatible x z'\<close> compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    apply (metis \<open>compatible y z'\<close> compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    apply (metis assms(3) compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    by (metis assms(2) compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
+  have [simp]: "valid_var_subst (transpose z z')"
+               "valid_var_subst (transpose x z')"
+               "valid_var_subst (transpose y z')"
+               "valid_var_subst (transpose x z)"
+               "valid_var_subst (transpose y z)"
+    apply (simp_all add: assms)
+    using \<open>compatible y z'\<close> assms(2) compatible_sym compatible_trans valid_var_subst_transpose by blast
 
-  have "full_subst_vars (Fun.swap z z' id) (full_subst_vars (Fun.swap x z' id) c) =a=
-        full_subst_vars (Fun.swap z z' id) (full_subst_vars (Fun.swap y z' id) d)"
+  have "full_subst_vars (transpose z z') (full_subst_vars (transpose x z') c) =a=
+        full_subst_vars (transpose z z') (full_subst_vars (transpose y z') d)"
     using _ _ ae' apply (rule alpha_eq_full_subst)
     by auto
 
-  then have *: "full_subst_vars (Fun.swap z z' id \<circ> Fun.swap x z' id) c =a=
-                full_subst_vars (Fun.swap z z' id \<circ> Fun.swap y z' id) d"
+  then have *: "full_subst_vars (transpose z z' \<circ> transpose x z') c =a=
+                full_subst_vars (transpose z z' \<circ> transpose y z') d"
     apply (subst full_subst_vars_compose[symmetric], simp)
     apply (subst full_subst_vars_compose[symmetric], simp)
     by -
 
-  have 1: "(Fun.swap z z' id \<circ> Fun.swap x z' id) v = Fun.swap x z id v"
+  have 1: "(transpose z z' \<circ> transpose x z') v = transpose x z v"
     if "v \<in> vars c" for v
   proof -
     have "v \<noteq> z'"
@@ -341,7 +333,7 @@ proof -
       using \<open>v \<noteq> z\<close> \<open>v \<noteq> z'\<close> by auto
   qed
 
-  have 2: "(Fun.swap z z' id \<circ> Fun.swap y z' id) v = Fun.swap y z id v"
+  have 2: "(transpose z z' \<circ> transpose y z') v = transpose y z v"
     if "v \<in> vars d" for v
   proof -
     have "v \<noteq> z'"
@@ -354,11 +346,11 @@ proof -
   qed
 
   from *
-  show "full_subst_vars (Fun.swap x z id) c =a=
-        full_subst_vars (Fun.swap y z id) d"
+  show "full_subst_vars (transpose x z) c =a=
+        full_subst_vars (transpose y z) d"
     apply (subst full_subst_vars_cong, simp)
      apply (rule 1[symmetric], simp)
-    apply (subst full_subst_vars_cong, simp)
+    apply (subst (2) full_subst_vars_cong, simp)
      apply (rule 2[symmetric], simp)
     by assumption
 qed
@@ -395,15 +387,15 @@ proof (induction c arbitrary: d e rule:measure_induct_rule[of size])
     have [simp]: "compatible w z"
       using \<open>compatible y w\<close> \<open>compatible y z\<close> compatible_sym compatible_trans by blast
 
-    have "full_subst_vars (Fun.swap x z id) c =a= full_subst_vars (Fun.swap y z id) d"
+    have "full_subst_vars (transpose x z) c =a= full_subst_vars (transpose y z) d"
       apply (rule ae_Local_arbitrary_z)
       using \<open>c' =a= d'\<close> by (simp_all add: c'_def d'_def)
 
-    moreover have "full_subst_vars (Fun.swap y z id) d =a= full_subst_vars (Fun.swap w z id) e"
+    moreover have "full_subst_vars (transpose y z) d =a= full_subst_vars (transpose w z) e"
       apply (rule ae_Local_arbitrary_z)
       using \<open>d' =a= e'\<close> by (simp_all add: d'_def e'_def)
 
-    ultimately have "full_subst_vars (Fun.swap x z id) c =a= \<dots>"
+    ultimately have "full_subst_vars (transpose x z) c =a= \<dots>"
       apply (rule less.IH[rotated])
       unfolding c'_def by simp
 
@@ -436,17 +428,17 @@ proof (induction c arbitrary: d \<sigma> rule:measure_induct_rule[of size])
     note c_def = Local
     from \<open>c =a= d\<close> obtain y d' z where d_def: "d = Local y d'" and [simp]:"compatible y z"
       and [simp]:"compatible x z" and "z \<noteq> x" and "z \<noteq> y" and "z \<notin> vars c'" and "z \<notin> vars d'"
-      and "full_subst_vars (Fun.swap x z id) c' =a= full_subst_vars (Fun.swap y z id) d'"
+      and "full_subst_vars (transpose x z) c' =a= full_subst_vars (transpose y z) d'"
       unfolding Local apply -
       apply (drule alpha_eq_cases)
       by auto
 
-    have [simp]: "valid_var_subst (Fun.swap x z id)"
-      by (simp add: compatible_sym swap_def valid_var_subst_def)
-    have [simp]: "valid_var_subst (Fun.swap y z id)"
-      by (simp add: compatible_sym swap_def valid_var_subst_def)
-    have [simp]: "inj_on (Fun.swap x z id) A" for x z :: 'z and A
-      by (meson UNIV_I inj_on_id inj_on_imp_inj_on_swap inj_on_subset top_greatest)
+    have [simp]: "valid_var_subst (transpose x z)"
+      by (simp add: compatible_sym transpose_def valid_var_subst_def)
+    have [simp]: "valid_var_subst (transpose y z)"
+      by (simp add: compatible_sym transpose_def valid_var_subst_def)
+    have [simp]: "inj_on (transpose x z) A" for x z :: 'z and A
+      by simp
 
     obtain z' where [simp]: \<open>compatible y z'\<close> \<open>z' \<noteq> x\<close> \<open>z' \<noteq> y\<close>
       \<open>z' \<notin> vars c'\<close> \<open>z' \<notin> vars d'\<close>
@@ -457,23 +449,23 @@ proof (induction c arbitrary: d \<sigma> rule:measure_induct_rule[of size])
     moreover have [simp]: "compatible x z'"
       using \<open>compatible x z\<close> \<open>compatible y z\<close> calculation(1) compatible_sym compatible_trans by blast
     ultimately 
-    have ae': "full_subst_vars (Fun.swap x z' id) c' =a=
-             full_subst_vars (Fun.swap y z' id) d'"
+    have ae': "full_subst_vars (transpose x z') c' =a=
+             full_subst_vars (transpose y z') d'"
       using \<open>c =a= d\<close> unfolding c_def d_def
       apply (rule_tac ae_Local_arbitrary_z[where z=z'])
       by auto
 
-    have [simp]: "valid_var_subst (Fun.swap x z' id)"
-      by (metis \<open>compatible x z'\<close> compatible_refl compatible_sym id_def swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    have [simp]: "valid_var_subst (Fun.swap y z' id)"
-      by (metis \<open>compatible y z'\<close> compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
-    have [simp]: "valid_var_subst (Fun.swap z z' id)"
-      by (smt \<open>compatible x z'\<close> \<open>compatible x z\<close> compatible_refl compatible_sym compatible_trans id_apply swap_apply(1) swap_apply(2) swap_apply(3) valid_var_subst_def)
+    have [simp]: "valid_var_subst (transpose x z')"
+      by simp
+    have [simp]: "valid_var_subst (transpose y z')"
+      by simp
+    have [simp]: "valid_var_subst (transpose z z')"
+      by (metis \<open>compatible y z\<close> \<open>valid_var_subst (Transposition.transpose y z')\<close> compatible_trans transpose_apply_second valid_var_subst_def valid_var_subst_transpose)
 
-    have [simp]: "Fun.swap x y id z = x \<longleftrightarrow> z = y" for x y z :: 'z
-      by (metis id_apply swap_apply(1) swap_apply(3) swap_commute)
-    have [simp]: "Fun.swap x y id z = y \<longleftrightarrow> z = x" for x y z :: 'z
-      by (metis id_apply swap_apply(1) swap_apply(2) swap_apply(3))
+    have [simp]: "transpose x y z = x \<longleftrightarrow> z = y" for x y z :: 'z
+      by (metis transpose_eq_iff)
+    have [simp]: "transpose x y z = y \<longleftrightarrow> z = x" for x y z :: 'z
+      by (metis transpose_eq_iff)
 
     from \<open>no_conflict \<sigma>' c\<close>
     have nc_\<sigma>x_c': \<open>no_conflict (\<sigma>'(x := x)) c'\<close>
@@ -492,39 +484,39 @@ proof (induction c arbitrary: d \<sigma> rule:measure_induct_rule[of size])
       unfolding d_def
       by (rule ic_nc_Local, simp)+
     note \<open>no_conflict \<sigma>' c\<close>
-    note \<open>full_subst_vars (Fun.swap x z id) c' =a= 
-        full_subst_vars (Fun.swap y z id) d'\<close>
+    note \<open>full_subst_vars (transpose x z) c' =a= 
+        full_subst_vars (transpose y z) d'\<close>
 
     have [simp]: \<open>z' \<notin> fv c'\<close>
       using \<open>z' \<notin> vars c'\<close> fv_vars by blast
     have [simp]: \<open>z' \<notin> fv d'\<close>
       using \<open>z' \<notin> vars d'\<close> fv_vars by blast
 
-    have eq_subst1: "(Fun.swap x z' id \<circ> \<sigma>'(x := x) \<circ> inv (Fun.swap x z' id)) v = 
-        (\<sigma>'(z':=z')) v" if "v \<in> fv (full_subst_vars (Fun.swap x z' id) c')" for v
+    have eq_subst1: "(transpose x z' \<circ> \<sigma>'(x := x) \<circ> inv (transpose x z')) v = 
+        (\<sigma>'(z':=z')) v" if "v \<in> fv (full_subst_vars (transpose x z') c')" for v
       using that apply (auto simp: fv_full_subst_vars)
       apply (subgoal_tac "\<And>v. v \<in> fv c' \<Longrightarrow> v \<noteq> x \<Longrightarrow> \<sigma>' v \<noteq> x")
-      apply (metis \<sigma>'_def \<open>z' \<notin> \<sigma> ` fv c'\<close> \<open>z' \<notin> fv c'\<close> id_apply image_iff swap_apply(3))
+       apply (metis \<open>z' \<notin> \<sigma> ` fv c'\<close> \<open>z' \<notin> fv c'\<close> \<sigma>'_def rev_image_eqI transpose_def)
       using \<open>x \<notin> \<sigma>' ` (fv c' \<inter> var_subst_dom \<sigma>')\<close> var_subst_dom_def by fastforce
 
-    have eq_subst2: "(Fun.swap y z' id \<circ> \<sigma>'(y := y) \<circ> inv (Fun.swap y z' id)) v = 
-        (\<sigma>'(z':=z')) v" if "v \<in> fv (full_subst_vars (Fun.swap y z' id) d')" for v
+    have eq_subst2: "(transpose y z' \<circ> \<sigma>'(y := y) \<circ> inv (transpose y z')) v = 
+        (\<sigma>'(z':=z')) v" if "v \<in> fv (full_subst_vars (transpose y z') d')" for v
       using that apply (auto simp: fv_full_subst_vars)
       apply (subgoal_tac "\<And>v. v \<in> fv d' \<Longrightarrow> v \<noteq> y \<Longrightarrow> \<sigma>' v \<noteq> y")
-      apply (metis \<sigma>'_def \<open>z' \<notin> \<sigma> ` fv d'\<close> \<open>z' \<notin> fv d'\<close> id_apply image_iff swap_apply(3))
+       apply (metis \<open>z' \<notin> \<sigma> ` fv d'\<close> \<open>z' \<notin> fv d'\<close> \<sigma>'_def rev_image_eqI transpose_def)
       using \<open>y \<notin> \<sigma>' ` (fv d' \<inter> var_subst_dom \<sigma>')\<close> var_subst_dom_def by fastforce
 
-    have nc1: "no_conflict (\<sigma>'(z' := z')) (full_subst_vars (Fun.swap x z' id) c')"
+    have nc1: "no_conflict (\<sigma>'(z' := z')) (full_subst_vars (transpose x z') c')"
       using eq_subst1 apply (rule no_conflict_cong, simp)
       apply (rule no_conflict_full_subst_vars, simp, simp)
       using \<open>no_conflict (\<sigma>'(x := x)) c'\<close> by blast
-    have nc2: "no_conflict (\<sigma>'(z' := z')) (full_subst_vars (Fun.swap y z' id) d')"
+    have nc2: "no_conflict (\<sigma>'(z' := z')) (full_subst_vars (transpose y z') d')"
       using eq_subst2 apply (rule no_conflict_cong, simp)
       apply (rule no_conflict_full_subst_vars, simp, simp)
       using \<open>no_conflict (\<sigma>'(y := y)) d'\<close> by blast
 
-    have "full_subst_vars (Fun.swap x z' id) (subst_vars (\<sigma>'(x := x)) c') =a=
-        full_subst_vars (Fun.swap y z' id) (subst_vars (\<sigma>'(y := y)) d')"
+    have "full_subst_vars (transpose x z') (subst_vars (\<sigma>'(x := x)) c') =a=
+        full_subst_vars (transpose y z') (subst_vars (\<sigma>'(y := y)) d')"
       apply (subst full_subst_vars_subst_vars_comm)
          apply auto[3]
       apply (subst full_subst_vars_subst_vars_comm)
@@ -626,7 +618,7 @@ proof -
     by simp
 
   from \<open>c =a= d\<close>
-  have "full_subst_vars (Fun.swap x z id) c =a= full_subst_vars (Fun.swap x z id) d"
+  have "full_subst_vars (transpose x z) c =a= full_subst_vars (transpose x z) d"
     apply (rule alpha_eq_full_subst[rotated -1])
     by auto
   then show ?thesis
@@ -658,15 +650,15 @@ proof -
 
   have "x \<notin> vars c'"
     using \<open>c =a= c'\<close> \<open>localvars c' \<inter> (fv c \<union> {x, y}) = {}\<close> assms(1) fv_alpha vars_fv_localvars by auto 
-  with \<open>z \<notin> vars c'\<close> have 1: "full_subst_vars (Fun.swap x z id) c' = c'"
-    by (smt \<open>compatible x z\<close> full_subst_vars_cong full_subst_vars_id' id_apply swap_apply(3) valid_swap)
+  with \<open>z \<notin> vars c'\<close> have 1: "full_subst_vars (transpose x z) c' = c'"
+    by (smt \<open>compatible x z\<close> full_subst_vars_cong full_subst_vars_id' id_apply transpose_def valid_var_subst_transpose)
 
   have "y \<notin> vars c'"
     using \<open>c =a= c'\<close> \<open>localvars c' \<inter> (fv c \<union> {x, y}) = {}\<close> assms(2) fv_alpha vars_fv_localvars by auto
-  with \<open>z \<notin> vars c'\<close> have 2: "full_subst_vars (Fun.swap y z id) c' = c'"
-    by (smt "1" \<open>compatible x z\<close> \<open>x \<notin> vars c'\<close> full_subst_vars_cong swap_apply(3) valid_swap)
+  with \<open>z \<notin> vars c'\<close> have 2: "full_subst_vars (transpose y z) c' = c'"
+    by (smt (z3) "1" \<open>compatible y z\<close> \<open>x \<notin> vars c'\<close> full_subst_vars_cong transpose_apply_other valid_var_subst_transpose)
 
-  have "full_subst_vars (Fun.swap x z id) c' =a= full_subst_vars (Fun.swap y z id) c'"
+  have "full_subst_vars (transpose x z) c' =a= full_subst_vars (transpose y z) c'"
     unfolding 1 2 by simp
 
   then have "Local x c' =a= Local y c'"
@@ -708,8 +700,8 @@ next
       apply (rule fresh_compatible)
       by simp
 
-    have [simp]: "inj_on (Fun.swap x z id) A" for A
-      by (metis UNIV_I eq_id_iff inj_on_id2 inj_on_imp_inj_on_swap inj_on_subset top_greatest)
+    have [simp]: "inj_on (transpose x z) A" for A
+      by simp
 
     define \<sigma>x where "\<sigma>x = \<sigma>(x:=x)"
 
@@ -739,38 +731,38 @@ next
       using avoidc' Cons.prems(4) by auto
     have [simp]: "var_subst_dom \<sigma>x \<subseteq> set V"
       by (smt Cons.prems(4) \<sigma>x_def fun_upd_apply insert_iff list.simps(15) mem_Collect_eq subset_iff var_subst_dom_def)
-    have [simp]: "no_conflict \<sigma>x (full_subst_vars (Fun.swap x z id) c')"
+    have [simp]: "no_conflict \<sigma>x (full_subst_vars (transpose x z) c')"
       apply (rule localvars_dom_no_conflict)
-      apply (subst fv_full_subst_vars, auto)
-      by (smt Un_upper1 Un_upper2 \<open>var_subst_dom \<sigma>x \<subseteq> set V\<close> \<sigma>x_def avoidc' disjoint_iff_not_equal fun_upd_apply id_apply image_subset_iff insert_subset subset_iff swap_apply(3))
-    have [simp]: "var_subst_dom (Fun.swap x z id) \<inter> localvars c' = {}"
-      by (smt Un_insert_left avoidc' disjoint_iff_not_equal id_def insert_iff
-          mem_Collect_eq swap_apply(3) var_subst_dom_def)
-    have [simp]: "var_subst_dom (Fun.swap (\<sigma> x) z id) \<inter> localvars c' = {}"
-      by (smt Un_insert_left \<open>var_subst_dom (Fun.swap x z id) \<inter> localvars c' = {}\<close> avoidc' disjoint_iff_not_equal inf_commute insert_disjoint(1) mem_Collect_eq swap_apply(3) var_subst_dom_def)
-    have [simp]: "no_conflict (Fun.swap x z id) c'"
-      apply (rule localvars_dom_no_conflict)
-      apply auto
-      by (metis IntI Un_insert_left \<open>var_subst_dom (Fun.swap x z id) \<inter> localvars c' = {}\<close> avoidc' disjoint_insert(1) empty_iff eq_id_iff fun_upd_apply swap_def)
-    have [simp]: "no_conflict (Fun.swap (\<sigma> x) z id) c'"
+      apply (subst fv_full_subst_vars)
+      using avoidc'[THEN equals0D] \<open>var_subst_dom \<sigma>x \<subseteq> set V\<close>[THEN subsetD]
+        apply (auto simp: var_subst_dom_def transpose_def \<sigma>x_def dest!: )
+      by (meson imageI)
+    have [simp]: "var_subst_dom (transpose x z) \<inter> localvars c' = {}"
+      using \<open>z \<noteq> x\<close>[symmetric] avoidc' by auto
+    have [simp]: "var_subst_dom (transpose (\<sigma> x) z) \<inter> localvars c' = {}"
+      by (smt (verit) Un_insert_left avoidc' disjoint_iff_not_equal insertCI mem_Collect_eq transpose_apply_other var_subst_dom_def)
+    have [simp]: "no_conflict (transpose x z) c'"
       apply (rule localvars_dom_no_conflict)
       apply auto
-      by (metis (no_types, hide_lams) IntI Un_insert_left \<open>var_subst_dom (Fun.swap (\<sigma> x) z id) \<inter> localvars c' = {}\<close> avoidc' empty_iff fun_upd_apply id_apply insert_iff swap_def)
+      by (metis \<open>var_subst_dom (Transposition.transpose x z) \<inter> localvars c' = {}\<close> avoidc' disjoint_iff_not_equal inf_sup_ord(3) insert_commute insert_subset transpose_eq_iff)
+    have [simp]: "no_conflict (transpose (\<sigma> x) z) c'"
+      apply (rule localvars_dom_no_conflict)
+      apply auto
+      by (metis Un_upper1 \<open>var_subst_dom (Transposition.transpose (\<sigma> x) z) \<inter> localvars c' = {}\<close> avoidc' disjoint_iff insert_subset transpose_eq_iff)
 
-
-    have disj': "(fv (full_subst_vars (Fun.swap x z id) c') - set V) \<inter> set (map \<sigma>x V) = {}"
+    have disj': "(fv (full_subst_vars (transpose x z) c') - set V) \<inter> set (map \<sigma>x V) = {}"
     proof (rule equals0I)
-      fix v assume "v \<in> (fv (full_subst_vars (Fun.swap x z id) c') - set V) \<inter> set (map \<sigma>x V)"
+      fix v assume "v \<in> (fv (full_subst_vars (transpose x z) c') - set V) \<inter> set (map \<sigma>x V)"
 
-      then have vc: "v \<in> Fun.swap x z id ` fv c" 
+      then have vc: "v \<in> transpose x z ` fv c" 
         and vV: "v \<notin> set V" and v\<sigma>: "v \<in> \<sigma>x ` set V"
         using \<open>c =a= c'\<close> by (auto simp: fv_full_subst_vars fv_alpha)
 
       have "z \<notin> fv c"
         using \<open>z \<notin> vars c\<close> fv_vars by blast
-      then have "Fun.swap x z id z \<notin> Fun.swap x z id ` fv c"
-        using \<open>\<And>A. inj_on (Fun.swap x z id) A\<close> by blast
-      then have "x \<notin> Fun.swap x z id ` fv c"
+      then have "transpose x z z \<notin> transpose x z ` fv c"
+        using \<open>\<And>A. inj_on (transpose x z) A\<close> by blast
+      then have "x \<notin> transpose x z ` fv c"
         by simp
       with vc have "v \<noteq> x"
         by metis
@@ -779,8 +771,8 @@ next
         unfolding \<sigma>x_def apply auto
         using \<open>z \<notin> \<sigma> ` set V\<close> by blast
 
-      from vc have "Fun.swap x z id v \<in> fv c"
-        by (metis (no_types, lifting) \<open>v \<noteq> x\<close> \<open>v \<noteq> z\<close> bij_def bij_id bij_swap_iff eq_id_iff inj_vimage_image_eq swap_apply(3) vimageI2)
+      from vc have "transpose x z v \<in> fv c"
+        by (simp add: in_transpose_image_iff)
       with \<open>v \<noteq> z\<close> \<open>v \<noteq> x\<close>
       have "v \<in> fv c"
         by simp
@@ -801,8 +793,8 @@ next
        apply (simp add: \<open>c =a= c'\<close> alpha_eq_sym)
       using \<open>z \<notin> vars c\<close> fv_vars by blast
 
-    have *: "(\<sigma>x \<circ> Fun.swap x z id) v =
-           (Fun.swap (\<sigma> x) z id \<circ> \<sigma> \<circ> inv (Fun.swap (\<sigma> x) z id) \<circ> Fun.swap (\<sigma> x) z id) v"
+    have *: "(\<sigma>x \<circ> transpose x z) v =
+           (transpose (\<sigma> x) z \<circ> \<sigma> \<circ> inv (transpose (\<sigma> x) z) \<circ> transpose (\<sigma> x) z) v"
       if "v \<in> fv c'" for v
     proof -
       have [simp]: "v \<noteq> z"
@@ -844,8 +836,8 @@ next
     qed
 
     have swap_subst: 
-      "subst_vars \<sigma>x (full_subst_vars (Fun.swap x z id) c')
-     = full_subst_vars (Fun.swap (\<sigma> x) z id) (subst_vars \<sigma> c')"
+      "subst_vars \<sigma>x (full_subst_vars (transpose x z) c')
+     = full_subst_vars (transpose (\<sigma> x) z) (subst_vars \<sigma> c')"
       apply (subst full_subst_vars_subst_vars_comm) apply simp_all[3]
       apply (subst full_subst_vars_subst_vars_eq) apply simp
       apply (subst full_subst_vars_subst_vars_eq) apply simp
@@ -854,27 +846,27 @@ next
       apply (rule subst_vars_cong) apply (simp add: valid_var_subst_comp)
       using * by -
 
-    have "full_subst_vars (Fun.swap x z id) (foldr Local V c)
-     = foldr Local V (full_subst_vars (Fun.swap x z id) c)"
+    have "full_subst_vars (transpose x z) (foldr Local V c)
+     = foldr Local V (full_subst_vars (transpose x z) c)"
       using \<open>x \<notin> set V\<close> \<open>z \<notin> set V\<close>
       by (induction V, auto)
-    also have "\<dots> =a= foldr Local V (full_subst_vars (Fun.swap x z id) c')"
+    also have "\<dots> =a= foldr Local V (full_subst_vars (transpose x z) c')"
       apply (rule alpha_foldr_Local_cong)
       apply (rule alpha_eq_full_subst)
       using \<open>c =a= c'\<close> by auto
-    also have "\<dots> =a= foldr Local (map \<sigma>x V) (subst_vars \<sigma>x (full_subst_vars (Fun.swap x z id) c'))"
+    also have "\<dots> =a= foldr Local (map \<sigma>x V) (subst_vars \<sigma>x (full_subst_vars (transpose x z) c'))"
       apply (rule Cons.IH)
       using disj' by auto
-    also have "\<dots> =a= foldr Local (map \<sigma>x V) (full_subst_vars (Fun.swap (\<sigma> x) z id) (subst_vars \<sigma> c'))"
+    also have "\<dots> =a= foldr Local (map \<sigma>x V) (full_subst_vars (transpose (\<sigma> x) z) (subst_vars \<sigma> c'))"
       apply (rule alpha_foldr_Local_cong)
       using swap_subst by simp
-    also have "\<dots> =a= full_subst_vars (Fun.swap (\<sigma> x) z id) (foldr Local (map \<sigma>x V) (subst_vars \<sigma> c'))"
+    also have "\<dots> =a= full_subst_vars (transpose (\<sigma> x) z) (foldr Local (map \<sigma>x V) (subst_vars \<sigma> c'))"
       using \<open>\<sigma> x \<notin> \<sigma> ` set V\<close> \<open>z \<notin> \<sigma> ` set V\<close>
       apply (induction V)
       by (auto simp: \<sigma>x_def)
-    also have "\<dots> = full_subst_vars (Fun.swap (\<sigma> x) z id) (foldr Local (map \<sigma> V) (subst_vars \<sigma> c'))"
+    also have "\<dots> = full_subst_vars (transpose (\<sigma> x) z) (foldr Local (map \<sigma> V) (subst_vars \<sigma> c'))"
       by (simp add: \<open>x \<notin> set V\<close> \<sigma>x_def)
-    also have "\<dots> =a= full_subst_vars (Fun.swap (\<sigma> x) z id) (foldr Local (map \<sigma> V) (subst_vars \<sigma> c))"
+    also have "\<dots> =a= full_subst_vars (transpose (\<sigma> x) z) (foldr Local (map \<sigma> V) (subst_vars \<sigma> c))"
       apply (rule alpha_eq_full_subst, auto)
       apply (rule alpha_foldr_Local_cong)
       using \<open>c =a= c'\<close>[symmetric] by (rule subst_vars_alpha_eq, auto)

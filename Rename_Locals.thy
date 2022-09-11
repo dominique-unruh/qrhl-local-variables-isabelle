@@ -106,7 +106,7 @@ next
       apply (subst full_subst_vars_compose, simp)
       apply (subst full_subst_vars_cong[where \<sigma>="id(v := w, w := v) \<circ> \<sigma>'" and \<tau>=\<sigma>])
         apply (fact valid_\<sigma>'vw)
-       apply (auto simp: \<sigma>'_def w_def Fun.swap_def o_def id_def)
+       apply (auto simp: \<sigma>'_def w_def transpose_def o_def id_def)
       (* Sledgehammer proof *)
       using \<sigma>_id apply blast
       by (metis Local.prems(2) inj_onD insert_iff vars.simps(4))
@@ -114,7 +114,7 @@ next
       by (simp add: \<sigma>'_def)
     also have "\<dots> =d= Local v (full_subst_vars \<sigma>' p)"
       apply (rule full_subst_vars_id)
-        apply (metis bij_betw_id bij_swap_iff id_apply swap_def)
+        apply (simp add: involuntory_imp_bij)
        apply (simp add: compat_vw compatible_sym valid_var_subst_def)
       by (auto simp: w_fv_\<sigma>'p var_subst_dom_def)
     also have "\<dots> =d= Local v (subst_vars \<sigma>' p)"
@@ -125,7 +125,7 @@ next
       apply simp
       apply (subst subst_vars_cong[where \<sigma>="\<sigma>(v:=v)" and \<tau>=\<sigma>'])
         apply (fact valid_\<sigma>v)
-      using \<open>w \<notin> fv p\<close> unfolding \<sigma>'_def w_def Fun.swap_def by auto
+      using \<open>w \<notin> fv p\<close> unfolding \<sigma>'_def w_def transpose_def by auto
     finally show ?thesis
       by -
   next
@@ -171,59 +171,57 @@ next
 next
   case (ae_Local y z x p1 p2)
 
-  have valid_xz: "valid_var_subst (Fun.swap x z id)"
+  have valid_xz: "valid_var_subst (transpose x z)"
     using ae_Local.hyps
     unfolding valid_var_subst_def apply auto
-    by (metis ae_Local.hyps(2) compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3))
-  have valid_yz: "valid_var_subst (Fun.swap y z id)"
+    by (metis compatible_refl compatible_sym transpose_def)
+  have valid_yz: "valid_var_subst (transpose y z)"
     using ae_Local.hyps
     unfolding valid_var_subst_def apply auto
-    by (metis compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3))
+  by (metis compatible_refl compatible_sym transpose_eq_iff)
 
-  have inj_xz: "inj_on (Fun.swap x z id) (vars (Local x p1))"
+  have inj_xz: "inj_on (transpose x z) (vars (Local x p1))"
     apply (rule inj_onI)
     by (simp add: inj_eq)
-  have inj_yz: "inj_on (Fun.swap y z id) (vars (Local y p2))"
+  have inj_yz: "inj_on (transpose y z) (vars (Local y p2))"
     apply (rule inj_onI)
     by (simp add: inj_eq)
 
-  have disj_xz: "var_subst_dom (Fun.swap x z id) \<inter> vars (Local x p1)
-                 \<inter> Fun.swap x z id -` vars (Local x p1) = {}"
+  have disj_xz: "var_subst_dom (transpose x z) \<inter> vars (Local x p1)
+                 \<inter> transpose x z -` vars (Local x p1) = {}"
     apply (subst bij_vimage_eq_inv_image)
     using ae_Local.hyps apply auto
-    apply (metis id_apply swap_apply(2) swap_apply(3) swap_commute)
-    by (smt id_apply mem_Collect_eq swap_apply(3) var_subst_dom_def)
-  have disj_yz: "var_subst_dom (Fun.swap y z id) \<inter> vars (Local y p2)
-                 \<inter> Fun.swap y z id -` vars (Local y p2) = {}"
+    by (metis transpose_apply_first transpose_involutory)
+  have disj_yz: "var_subst_dom (transpose y z) \<inter> vars (Local y p2)
+                 \<inter> transpose y z -` vars (Local y p2) = {}"
     apply (subst bij_vimage_eq_inv_image)
     using ae_Local.hyps apply auto
-    apply (metis id_apply swap_apply(2) swap_apply(3) swap_commute)
-    by (smt id_apply mem_Collect_eq swap_apply(3) var_subst_dom_def)
+    by (metis transpose_apply_first transpose_involutory)
 
   have "Local x p1 = Local x (subst_vars id p1)"
     by (metis (full_types) eq_id_iff subst_vars_id)
-  also have "\<dots> = subst_vars (Fun.swap x z id) (Local x p1)"
+  also have "\<dots> = subst_vars (transpose x z) (Local x p1)"
     apply simp
     apply (rule subst_vars_cong)
      apply (simp add: valid_var_subst_def)
-    by (metis ae_Local.hyps(5) fun_upd_apply fv_vars id_apply subsetD swap_apply(3))
-  also have "\<dots> =d= full_subst_vars (Fun.swap x z id) (Local x p1)"
+    by (metis ae_Local.hyps(5) fun_upd_apply fv_vars id_apply subsetD transpose_def)
+  also have "\<dots> =d= full_subst_vars (transpose x z) (Local x p1)"
     apply (rule denot_eq'_sym)
     using valid_xz inj_xz disj_xz by (rule full_subst_vars_subst_vars)
-  also have "\<dots> =d= Local z (full_subst_vars (Fun.swap x z id) p1)"
+  also have "\<dots> =d= Local z (full_subst_vars (transpose x z) p1)"
     by simp
   also from ae_Local.IH
-  have "\<dots> =d= Local z (full_subst_vars (Fun.swap y z id) p2)"
+  have "\<dots> =d= Local z (full_subst_vars (transpose y z) p2)"
     by (rule denot_eq'_cong_local)
-  also have "\<dots> =d= full_subst_vars (Fun.swap y z id) (Local y p2)"
+  also have "\<dots> =d= full_subst_vars (transpose y z) (Local y p2)"
     by simp
-  also have "\<dots> =d= subst_vars (Fun.swap y z id) (Local y p2)"
+  also have "\<dots> =d= subst_vars (transpose y z) (Local y p2)"
     using valid_yz inj_yz disj_yz by (rule full_subst_vars_subst_vars)
   also have "\<dots> = Local y (subst_vars id p2)"
     apply (rule sym, simp)
     apply (rule subst_vars_cong)
      apply (simp add: valid_var_subst_def)
-    by (metis ae_Local.hyps(6) fun_upd_apply fv_vars id_apply subsetD swap_apply(3))
+    by (metis ae_Local.hyps(6) fun_upd_apply fv_vars id_apply subsetD transpose_def)
   also have "\<dots> = Local y p2"
     using eq_id_iff by fastforce
   finally

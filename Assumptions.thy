@@ -1,7 +1,9 @@
 section \<open>Assumptions\<close>
 
 theory Assumptions
-  imports Basic_Definitions
+  imports
+    "HOL-Combinatorics.Transposition"
+    Basic_Definitions
 begin
 
 text \<open>This states that predicates form a bounded lattice (i.e., a lattice with top and bottom elements).\<close>
@@ -113,14 +115,14 @@ axiomatization where
 axiomatization where
   rename_qrhl10: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv c \<Longrightarrow> compatible (QVar q) (QVar r)
     \<Longrightarrow> QVar r \<notin> fv c \<Longrightarrow> qrhl A c d B 
-    \<Longrightarrow> qrhl (substp_bij (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d 
-             (substp_bij (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
+    \<Longrightarrow> qrhl (substp_bij (transpose (idx True (QVar q)) (idx True (QVar r))) A) c d 
+             (substp_bij (transpose (idx True (QVar q)) (idx True (QVar r))) B)"
 
 axiomatization where
   rename_qrhl20: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv d \<Longrightarrow> compatible (QVar q) (QVar r)
      \<Longrightarrow> QVar r \<notin> fv d \<Longrightarrow> qrhl A c d B 
-     \<Longrightarrow> qrhl (substp_bij (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d 
-              (substp_bij (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
+     \<Longrightarrow> qrhl (substp_bij (transpose (idx False (QVar q)) (idx False (QVar r))) A) c d 
+              (substp_bij (transpose (idx False (QVar q)) (idx False (QVar r))) B)"
 
 axiomatization where
   joint_init_eq00: "QVar ` set Q \<subseteq> V \<Longrightarrow> is_quantum' V \<Longrightarrow> qrhl (Eq V) 
@@ -187,9 +189,9 @@ axiomatization where qrhl_subst_right0:
 
 axiomatization where substp_bij_Eq:
   \<open>q' \<noteq> r' \<Longrightarrow> compatible (QVar q') (QVar r')
-   \<Longrightarrow> substp_bij (Fun.swap (idx True (QVar q')) (idx True (QVar r'))
-               (Fun.swap (idx False (QVar q')) (idx False (QVar r')) id)) (Eq V)
-         = Eq (Fun.swap (QVar q) (QVar r) id ` V)\<close>
+   \<Longrightarrow> substp_bij (transpose (idx True (QVar q')) (idx True (QVar r')) o
+               (transpose (idx False (QVar q')) (idx False (QVar r')))) (Eq V)
+         = Eq (transpose (QVar q) (QVar r) ` V)\<close>
 
 axiomatization where substp_bij_inter:
   \<open>bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<sigma> (A\<sqinter>B) = substp_bij \<sigma> A \<sqinter> substp_bij \<sigma> B\<close>

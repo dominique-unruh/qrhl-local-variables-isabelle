@@ -943,18 +943,19 @@ lemma clean_QVar_case: "is_quantum x \<Longrightarrow> QVar (case x of QVar x' \
 lemma finite_holes[simp]: "finite (holes C)"
   apply (induction C) by auto
 
+lemma var_subst_dom_transpose[simp]: \<open>var_subst_dom (transpose x y) = {x,y}\<close> if \<open>x \<noteq> y\<close>
+  using that by (auto simp: var_subst_dom_def transpose_def)
 
 lemma subst_vars_rm_valid[simp]: 
   assumes "valid_var_subst \<sigma>"
   shows "valid_var_subst (\<sigma>(v:=v))"
   using assms unfolding valid_var_subst_def by simp
 
-lemma valid_var_subst_swap[simp]:
-  assumes \<open>valid_var_subst \<sigma>\<close>
+lemma valid_var_subst_transpose[simp]:
   assumes \<open>compatible x y\<close>
-  shows \<open>valid_var_subst (Fun.swap x y \<sigma>)\<close>
+  shows \<open>valid_var_subst (transpose x y)\<close>
   using assms unfolding valid_var_subst_def
-  by (metis compatible_sym compatible_trans swap_apply)
+  by (metis compatible_refl compatible_sym transpose_def)
 
 lemma valid_var_subst_id[simp]: \<open>valid_var_subst id\<close>
   by (simp add: valid_var_subst_def)
@@ -1423,16 +1424,17 @@ lemma rename_qrhl1:
   assumes "QVar q \<notin> fv c"
   assumes "QVar r \<notin> fv c"
   assumes "qRHL A c d B"
-  shows "qRHL (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) A) c d (substp (Fun.swap (idx True (QVar q)) (idx True (QVar r)) id) B)"
-  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>Fun.swap (idx True (QVar q)) (idx True (QVar r)) id\<close>] program_substitute qRHL_def rename_qrhl10 by (auto simp del: idx.simps)
-
+  shows "qRHL (substp (transpose (idx True (QVar q)) (idx True (QVar r))) A) c d (substp (transpose (idx True (QVar q)) (idx True (QVar r))) B)"
+  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>transpose (idx True (QVar q)) (idx True (QVar r))\<close>] program_substitute qRHL_def rename_qrhl10 
+  by (auto simp del: idx.simps)
+  
 lemma rename_qrhl2:
   assumes \<open>compatible (QVar q) (QVar r)\<close>
   assumes "QVar q \<notin> fv d"
   assumes "QVar r \<notin> fv d"
   assumes "qRHL A c d B"
-  shows "qRHL (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) A) c d (substp (Fun.swap (idx False (QVar q)) (idx False (QVar r)) id) B)"
-  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>Fun.swap (idx False (QVar q)) (idx False (QVar r)) id\<close>] program_substitute qRHL_def rename_qrhl20 by (auto simp del: idx.simps)
+  shows "qRHL (substp (transpose (idx False (QVar q)) (idx False (QVar r))) A) c d (substp (transpose (idx False (QVar q)) (idx False (QVar r))) B)"
+  using assms program.intros(3) substp_substp_bij[where \<tau>=\<open>transpose (idx False (QVar q)) (idx False (QVar r))\<close>] program_substitute qRHL_def rename_qrhl20 by (auto simp del: idx.simps)
 
 lemma CVar_subst_vars_c[simp]: 
   assumes "valid_var_subst \<sigma>"
@@ -1516,11 +1518,6 @@ lemma subst_vars_q_id[simp]: "subst_vars_q id = id"
 lemma full_subst_vars_id'[simp]: "full_subst_vars id = id"
   apply (rule ext, rename_tac c, induct_tac c)
   by (auto simp: subst_vars_c_id[unfolded id_def] subst_vars_q_id[unfolded id_def])
-
-
-lemma Fun_swap_id_inv[simp]: "inv (Fun.swap x y id) = Fun.swap x y id"
-  by (simp add: comp_swap inv_unique_comp)
-
 
 lemma vars_fv_localvars: "vars c = fv c \<union> localvars c"
   by (induction c, auto)
@@ -1643,12 +1640,6 @@ proof (induction c arbitrary: \<sigma>)
     by (rule no_conflict.intros)
 qed (auto intro!: no_conflict.intros)
 
-
-lemma valid_swap[simp]: "compatible x y \<Longrightarrow> valid_var_subst (Fun.swap x y id)"
-  unfolding valid_var_subst_def apply auto
-  by (metis compatible_refl compatible_sym id_apply swap_apply(1) swap_apply(2) swap_apply(3))
-
-
 lemma fv_foldr_Local[simp]: "fv (foldr Local V c) = fv c - set V"
   by (induction V, auto)
 
@@ -1704,29 +1695,7 @@ lemma surj_idx_var_subst[simp]:
   assumes "surj \<tau>"
   shows "surj (idx_var_subst side \<tau>)"
   using assms unfolding surj_def idx_var_subst_def
-(* Sledgehammer proof *)
-proof -
-  assume a1: "\<forall>y. \<exists>x. y = \<tau> x"
-  { assume "\<exists>v b. idx b v = esk2_0"
-    then have "\<exists>b v. idx b (\<tau> (inv (idx side) v)) = esk2_0 \<and> v \<in> range (idx side)"
-      using a1 by (metis (no_types) f_inv_into_f idx_inj rangeI)
-    then have "(\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va)) \<or> (\<exists>b v. (\<not> b \<and> idx b (\<tau> (inv (idx side) v)) = esk2_0) \<and> v \<in> range (idx side)) \<or> (\<exists>v b. (\<not> side \<and> idx b v = esk2_0) \<and> b)"
-      by (metis (no_types, hide_lams) assms f_inv_into_f idx_inj rangeI surjD)
-    moreover
-    { assume "\<exists>b v. (\<not> b \<and> idx b (\<tau> (inv (idx side) v)) = esk2_0) \<and> v \<in> range (idx side)"
-      then have "(\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va)) \<or> (\<exists>v b. (\<not> b \<and> idx b v = esk2_0) \<and> side)"
-        by (metis (no_types, hide_lams) assms f_inv_into_f idx_inj rangeI surjD)
-      then have "idx side (inv (idx side) esk2_0) = esk2_0 \<longrightarrow> (\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va))"
-        by fastforce }
-    ultimately have "idx side (inv (idx side) esk2_0) = esk2_0 \<longrightarrow> (\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va))"
-      by fastforce }
-  moreover
-  { assume "idx side (inv (idx side) esk2_0) \<noteq> esk2_0"
-    then have "\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va)"
-      by (metis (no_types, hide_lams) assms f_inv_into_f idx_inj rangeI surjD)}
-  ultimately show "\<forall>v. \<exists>va. v = (if va \<in> range (idx side) then idx side (\<tau> (inv (idx side) va)) else va)"
-    by blast
-qed
+  by (metis (no_types, lifting) f_inv_into_f idx_inj' range_eqI range_ex1_eq)
 
 lemma bij_idx_var_subst[simp]:
   assumes "bij \<tau>"
@@ -1801,17 +1770,6 @@ lemma qrhlelimeq_aux:
   shows "(Qstar \<inter> overwr c) \<union> (Qstar - fv c) = Qstar"
   and "(Qstar \<inter> overwr d) \<union> (Qstar - fv d) = Qstar"
   using assms by blast+
-
-lemma swap_comp:
-  assumes \<open>x \<noteq> v\<close> \<open>x \<noteq> w\<close> \<open>y \<noteq> v\<close> \<open>y \<noteq> w\<close>
-  shows \<open>Fun.swap x y id o Fun.swap v w id = Fun.swap x y (Fun.swap v w id)\<close>
-  apply (rule ext, rename_tac a)
-  using assms
-  apply (case_tac \<open>a=w\<close>, simp)
-  apply (case_tac \<open>a=x\<close>, simp)
-  apply (case_tac \<open>a=y\<close>, simp)
-  apply (case_tac \<open>a=v\<close>, simp)
-  by simp
 
 end
 

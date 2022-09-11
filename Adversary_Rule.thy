@@ -310,30 +310,27 @@ next
     apply (cases b)
     using qR by (simp_all add: Rv_def deidx12_def)
 
-  have swap_V': "Fun.swap (QVar q') (QVar r') id ` V' = V"
+  have swap_V': "transpose (QVar q') (QVar r') ` V' = V"
     unfolding V'_def
     using \<open>r \<noteq> q\<close> \<open>r \<notin> V\<close>
-    apply (auto simp: q'[symmetric] r'[symmetric])
-    by (smt id_def image_iff insertI1 insert_Diff_single insert_commute insert_iff swap_apply(2) swap_apply(3))+
+    by (auto simp: transpose_def q'[symmetric] r'[symmetric])
 
   have "R \<sqinter> Eq V
-        = substp_bij (Fun.swap (idx True q) (idx True r)
-                   (Fun.swap (idx False q) (idx False r) id)) (R \<sqinter> Eq V')"
+        = substp_bij (transpose (idx True q) (idx True r) o
+                   (transpose (idx False q) (idx False r))) (R \<sqinter> Eq V')"
     apply (subst substp_bij_inter)
-      apply (auto intro!: valid_var_subst_swap compatible_idx)[2]
+      apply (auto intro!: valid_var_subst_comp compatible_idx simp: bij_swap_iff)[2]
     apply (subst substp_bij_id)
-       apply (auto intro!: valid_var_subst_swap compatible_idx)[2]
-     apply (metis id_apply idx_q_R idx_r_R swap_apply(3))
+       apply (auto intro!: valid_var_subst_comp compatible_idx simp: bij_swap_iff)[3]
+     apply (metis idx_q_R idx_r_R transpose_apply_other)
     using substp_bij_Eq  q' r' apply auto
     by (metis \<open>compatible q r\<close> \<open>r \<noteq> q\<close> swap_V')
-  also have \<open>\<dots> = substp (Fun.swap (idx True q) (idx True r) id) (substp (Fun.swap (idx False q) (idx False r) id) (R \<sqinter> Eq V'))\<close>
-    apply (subst swap_comp[symmetric])
-        apply auto[4]
+  also have \<open>\<dots> = substp (transpose (idx True q) (idx True r)) (substp (transpose (idx False q) (idx False r)) (R \<sqinter> Eq V'))\<close>
     apply (subst substp_bij_comp[symmetric])
         apply auto[4]
-    apply (subst substp_substp_bij[where \<tau>=\<open>Fun.swap (idx True q) (idx True r) id\<close>])
+    apply (subst substp_substp_bij[where \<tau>=\<open>transpose (idx True q) (idx True r)\<close>])
        apply auto[3]
-    apply (subst substp_substp_bij[where \<tau>=\<open>Fun.swap (idx False q) (idx False r) id\<close>])
+    apply (subst substp_substp_bij[where \<tau>=\<open>transpose (idx False q) (idx False r)\<close>])
     by auto
 
   also have "qRHL \<dots> (subst (Local q C)) (subst' (Local q C)) \<dots>"
