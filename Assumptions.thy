@@ -29,7 +29,7 @@ axiomatization where
 
 
 axiomatization where
-  weaken_Eq: "V \<subseteq> W \<Longrightarrow> (\<And>x. x \<in> W - V \<Longrightarrow> is_classical x) \<Longrightarrow> Eq V \<ge> Eq W"
+  weaken_Eq: "V \<subseteq> W \<Longrightarrow> (\<And>x. x \<in> W - V \<Longrightarrow> is_classical x) \<Longrightarrow> Eq0 V \<ge> Eq0 W"
 
 axiomatization where
   denot_eq_seq_assoc0: "program c \<Longrightarrow> program d \<Longrightarrow> program e \<Longrightarrow> denot_eq ((c; d); e) (c; (d; e))"
@@ -62,16 +62,16 @@ axiomatization where
   denot_eq_qinit0: "program p \<Longrightarrow> distinct Q \<Longrightarrow> QVar ` set Q \<subseteq> overwr p \<Longrightarrow> denot_eq (QInit Q some_constant; p) p"
 
 axiomatization where
-  assign_Eq0: "qrhl top (Assign X some_constant) (Assign X some_constant) (Eq (CVar ` set X))"
+  assign_Eq0: "qrhl top (Assign X some_constant) (Assign X some_constant) (Eq0 (CVar ` set X))"
 
 axiomatization where
-  qinit_Eq0: "distinct Q \<Longrightarrow> qrhl top (QInit Q some_constant) (QInit Q some_constant) (Eq (QVar ` set Q))"
+  qinit_Eq0: "distinct Q \<Longrightarrow> qrhl top (QInit Q some_constant) (QInit Q some_constant) (Eq0 (QVar ` set Q))"
 
 axiomatization where
-  Eq_split: "is_classical' X \<Longrightarrow> Eq (X \<union> Y) = Eq X \<sqinter> Eq Y"
+  Eq_split: "is_classical' X \<Longrightarrow> Eq0 (X \<union> Y) = Eq0 X \<sqinter> Eq0 Y"
 
 axiomatization where
-  Eq_split_leq: "V \<inter> W = {} \<Longrightarrow> Eq V \<sqinter> Eq W \<le> Eq (V \<union> W)"
+  Eq_split_leq: "V \<inter> W = {} \<Longrightarrow> Eq0 V \<sqinter> Eq0 W \<le> Eq0 (V \<union> W)"
 
 axiomatization where
   frame_rule0: "program c \<Longrightarrow> program d \<Longrightarrow> (idx True ` written c) \<inter> fvp R = {}
@@ -79,7 +79,7 @@ axiomatization where
      \<Longrightarrow> qrhl (A \<sqinter> R) c d (B \<sqinter> R)"
 
 axiomatization where
-  fvp_Eq[simp]: "fvp (Eq V) = idx12 V"
+  fvp_Eq[simp]: "fvp (Eq0 V) = idx12 V"
 
 axiomatization where
   fvp_inter: "fvp (A \<sqinter> B) \<subseteq> fvp A \<union> fvp B"
@@ -87,30 +87,32 @@ axiomatization where
 axiomatization where
   varchange0: "program c \<Longrightarrow> program d \<Longrightarrow> is_quantum' Q \<Longrightarrow> is_quantum' Q' \<Longrightarrow> q \<in> Q
      \<Longrightarrow> infinite_var q \<Longrightarrow> (fvp A \<union> fvp B) \<inter> (idx12 Q \<inter> idx12 Q') = {} 
-     \<Longrightarrow> (fv c \<union> fv d) \<inter> (Q \<union> Q') = {} \<Longrightarrow> qrhl (A \<sqinter> Eq (Vl \<union> Q)) c d (B \<sqinter> Eq (Vr \<union> Q))
-     \<Longrightarrow> qrhl (A \<sqinter> Eq (Vl \<union> Q')) c d (B \<sqinter> Eq (Vr \<union> Q'))"
+     \<Longrightarrow> (fv c \<union> fv d) \<inter> (Q \<union> Q') = {} \<Longrightarrow> qrhl (A \<sqinter> Eq0 (Vl \<union> Q)) c d (B \<sqinter> Eq0 (Vr \<union> Q))
+     \<Longrightarrow> qrhl (A \<sqinter> Eq0 (Vl \<union> Q')) c d (B \<sqinter> Eq0 (Vr \<union> Q'))"
 
 axiomatization where
   drop_Eq0: "program c \<Longrightarrow> program d \<Longrightarrow> is_classical' X \<Longrightarrow> fvp A \<inter> idx12 X = {}
-      \<Longrightarrow> fv c \<inter> X = {} \<Longrightarrow> fv d \<inter> X = {} \<Longrightarrow> qrhl (A \<sqinter> Eq X) c d B \<Longrightarrow> qrhl A c d B"
+      \<Longrightarrow> fv c \<inter> X = {} \<Longrightarrow> fv d \<inter> X = {} \<Longrightarrow> qrhl (A \<sqinter> Eq0 X) c d B \<Longrightarrow> qrhl A c d B"
 
 axiomatization where
-  equal_rule0: "program p \<Longrightarrow> fv p \<subseteq> V \<Longrightarrow> qrhl (Eq V) p p (Eq V)"
-
-axiomatization where
-    \<comment> \<open>Weakened w.r.t. original\<close>
-  joint_while_rule0: "program c \<Longrightarrow> program d \<Longrightarrow> A \<le> Eq (CVar ` fve e) \<Longrightarrow> qrhl A c d A \<Longrightarrow> qrhl A (While e c) (While e d) A"
+  equal_rule0: "program p \<Longrightarrow> fv p \<subseteq> V \<Longrightarrow> qrhl (Eq0 V) p p (Eq0 V)"
 
 axiomatization where
     \<comment> \<open>Weakened w.r.t. original\<close>
-  joint_if_rule0: "program c1 \<Longrightarrow> program d1 \<Longrightarrow> program c2 \<Longrightarrow> program d2 \<Longrightarrow> A \<le> Eq (CVar ` fve e) \<Longrightarrow> qrhl A c1 c2 B \<Longrightarrow> qrhl A d1 d2 B \<Longrightarrow> qrhl A (IfTE e c1 d1) (IfTE e c2 d2) A"
+  joint_while_rule0: "program c \<Longrightarrow> program d \<Longrightarrow> A \<le> Eq0 (CVar ` fve e) \<Longrightarrow> qrhl A c d A \<Longrightarrow> qrhl A (While e c) (While e d) A"
+
+axiomatization where
+    \<comment> \<open>Weakened w.r.t. original\<close>
+  joint_if_rule0: "program c1 \<Longrightarrow> program d1 \<Longrightarrow> program c2 \<Longrightarrow> program d2 \<Longrightarrow> A \<le> Eq0 (CVar ` fve e) \<Longrightarrow> qrhl A c1 c2 B \<Longrightarrow> qrhl A d1 d2 B \<Longrightarrow> qrhl A (IfTE e c1 d1) (IfTE e c2 d2) A"
 
 (* Rule JointRemoveLocal0 *)
 axiomatization where
   joint_local0_rule0: "program c \<Longrightarrow> program d 
     \<Longrightarrow> idx True v \<notin> fvp A \<Longrightarrow> idx False v \<notin> fvp A \<Longrightarrow> v \<notin> S \<Longrightarrow> v \<notin> R 
-    \<Longrightarrow> qrhl (A \<sqinter> Eq (insert v S)) c d (A \<sqinter> Eq (insert v R))
-    \<Longrightarrow> qrhl (A \<sqinter> Eq S) (Local v c) (Local v d) (A \<sqinter> Eq R)"
+    \<Longrightarrow> insert v S \<inter> QVar ` (set W1 \<union> set W2) = {}
+    \<Longrightarrow> qrhl (A \<sqinter> Eq (U1,U2,W1,W2) (insert v S)) c d (A \<sqinter> Eq (U1,U2,W1,W2) (insert v R))
+    \<Longrightarrow> qrhl (A \<sqinter> Eq (U1,U2,W1,W2) S) (Local v c) (Local v d) (A \<sqinter> Eq (U1,U2,W1,W2) R)"
+(* TODO: Check updated rule. U1,U2 conditions? *)
 
 axiomatization where
   rename_qrhl10: "program c \<Longrightarrow> program d \<Longrightarrow> QVar q \<notin> fv c \<Longrightarrow> compatible (QVar q) (QVar r)
@@ -125,9 +127,9 @@ axiomatization where
               (substp_bij (transpose (idx False (QVar q)) (idx False (QVar r))) B)"
 
 axiomatization where
-  joint_init_eq00: "QVar ` set Q \<subseteq> V \<Longrightarrow> is_quantum' V \<Longrightarrow> qrhl (Eq V) 
+  joint_init_eq00: "QVar ` set Q \<subseteq> V \<Longrightarrow> is_quantum' V \<Longrightarrow> qrhl (Eq0 V) 
         (QInit Q some_constant) (QInit Q some_constant)
-        (Eq (V - QVar ` set Q))"
+        (Eq0 (V - QVar ` set Q))"
 
 axiomatization where
   seq_c_skip0[simp]: "program c \<Longrightarrow> denot_eq (c; Skip) c"
@@ -188,10 +190,11 @@ axiomatization where qrhl_subst_right0:
    qrhl (substp_bij (idx_var_subst False \<tau>) A) c (full_subst_vars \<tau> d) (substp_bij (idx_var_subst False \<tau>) B)"
 
 axiomatization where substp_bij_Eq:
-  \<open>q' \<noteq> r' \<Longrightarrow> compatible (QVar q') (QVar r')
-   \<Longrightarrow> substp_bij (transpose (idx True (QVar q')) (idx True (QVar r')) o
-               (transpose (idx False (QVar q')) (idx False (QVar r')))) (Eq V)
-         = Eq (transpose (QVar q) (QVar r) ` V)\<close>
+  \<open>q \<notin> set W1 \<union> set W2 \<Longrightarrow> r \<notin> set W1 \<union> set W2 
+   \<Longrightarrow> q \<noteq> r \<Longrightarrow> compatible (QVar q) (QVar r)
+   \<Longrightarrow> substp_bij (transpose (idx True (QVar q)) (idx True (QVar r)) o
+                  (transpose (idx False (QVar q)) (idx False (QVar r)))) (Eq (U1,U2,W1,W2) V)
+         = Eq (U1,U2,W1,W2) (transpose (QVar q) (QVar r) ` V)\<close>
 
 axiomatization where substp_bij_inter:
   \<open>bij \<sigma> \<Longrightarrow> valid_var_subst \<sigma> \<Longrightarrow> substp_bij \<sigma> (A\<sqinter>B) = substp_bij \<sigma> A \<sqinter> substp_bij \<sigma> B\<close>

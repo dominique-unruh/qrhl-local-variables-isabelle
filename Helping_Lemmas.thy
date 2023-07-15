@@ -210,10 +210,10 @@ lemma denot_eq_qinit:
   by (smt assms(1) assms(2) denot_eq'_def denot_eq_qinit0 overwr_subst program.intros(3) program.intros(4) program_substitute subset_trans substitute.simps(3) substitute_program)
 
 
-lemma assign_Eq: "qRHL top (Assign X some_constant) (Assign X some_constant) (Eq (CVar ` set X))"
+lemma assign_Eq: "qRHL top (Assign X some_constant) (Assign X some_constant) (Eq0 (CVar ` set X))"
   by (simp add: assign_Eq0 qRHL_def)
 
-lemma qinit_Eq: "distinct Q \<Longrightarrow> qRHL top (QInit Q some_constant) (QInit Q some_constant) (Eq (QVar ` set Q))"
+lemma qinit_Eq: "distinct Q \<Longrightarrow> qRHL top (QInit Q some_constant) (QInit Q some_constant) (Eq0 (QVar ` set Q))"
   by (simp add: qRHL_def qinit_Eq0)
 
 lemma frame_rule:
@@ -229,8 +229,8 @@ lemma varchange:
   assumes "q \<in> Q" and "infinite_var q"
   assumes "(fvp A \<union> fvp B) \<inter> (idx12 Q \<inter> idx12 Q') = {}"
   assumes "(fv c \<union> fv d) \<inter> (Q \<union> Q') = {}"
-  assumes "qRHL (A \<sqinter> Eq (Vl \<union> Q)) c d (B \<sqinter> Eq (Vr \<union> Q))"
-  shows "qRHL (A \<sqinter> Eq (Vl \<union> Q')) c d (B \<sqinter> Eq (Vr \<union> Q'))"
+  assumes "qRHL (A \<sqinter> Eq0 (Vl \<union> Q)) c d (B \<sqinter> Eq0 (Vr \<union> Q))"
+  shows "qRHL (A \<sqinter> Eq0 (Vl \<union> Q')) c d (B \<sqinter> Eq0 (Vr \<union> Q'))"
   unfolding qRHL_def
   apply (rule varchange0)
   using assms unfolding qRHL_def
@@ -241,43 +241,46 @@ lemma drop_Eq:
   assumes "fvp A \<inter> idx12 X = {}"
   assumes "fv c \<inter> X = {}"
   assumes "fv d \<inter> X = {}"
-  assumes "qRHL (A \<sqinter> Eq X) c d B"
+  assumes "qRHL (A \<sqinter> Eq0 X) c d B"
   shows "qRHL A c d B"
   using assms(1) assms(2) assms(3) assms(4) assms(5) drop_Eq0 program.intros(3) program_substitute qRHL_def by auto
 
 lemma equal_rule:
   assumes "fv p \<subseteq> V"
-  shows "qRHL (Eq V) p p (Eq V)"
+  shows "qRHL (Eq0 V) p p (Eq0 V)"
   by (simp add: assms equal_rule0 program.intros(3) program_substitute qRHL_def)
 
 lemma joint_while_rule:
-  assumes "A \<le> Eq (CVar ` fve e)"
+  assumes "A \<le> Eq0 (CVar ` fve e)"
   assumes "qRHL A c d A"
   shows "qRHL A (While e c) (While e d) A"
   using assms(1) assms(2) joint_while_rule0 program.intros(3) program_substitute qRHL_def by auto
 
 lemma joint_if_rule:
-  assumes "A \<le> Eq (CVar ` fve e)"
+  assumes "A \<le> Eq0 (CVar ` fve e)"
   assumes "qRHL A c1 c2 B"
   assumes "qRHL A d1 d2 B"
   shows "qRHL A (IfTE e c1 d1) (IfTE e c2 d2) A"
   using assms(1) assms(2) assms(3) joint_if_rule0 program.intros(3) program_substitute qRHL_def by auto
 
 lemma joint_local0_rule:
+  fixes U1 U2 W1 W2
+  defines \<open>Eq' \<equiv> Eq (U1,U2,W1,W2)\<close>
   assumes "idx True v \<notin> fvp A"
   assumes "idx False v \<notin> fvp A"
   assumes "v \<notin> S"
   assumes "v \<notin> R"
-  assumes "qRHL (A \<sqinter> Eq (insert v S)) c d (A \<sqinter> Eq (insert v R))"
-  shows "qRHL (A \<sqinter> Eq S) (Local v c) (Local v d) (A \<sqinter> Eq R)"
-  using assms(1) assms(2) assms(3) assms(4) assms(5) joint_local0_rule0 program.intros(3) program_substitute qRHL_def by auto
+  assumes \<open>insert v S \<inter> QVar ` (set W1 \<union> set W2) = {}\<close>
+  assumes "qRHL (A \<sqinter> Eq' (insert v S)) c d (A \<sqinter> Eq' (insert v R))"
+  shows "qRHL (A \<sqinter> Eq' S) (Local v c) (Local v d) (A \<sqinter> Eq' R)"
+  using assms joint_local0_rule0 program.intros(3) program_substitute qRHL_def by auto
 
 lemma joint_init_eq0:
   assumes "QVar ` set Q \<subseteq> V"
   assumes "is_quantum' V"
-  shows "qRHL (Eq V) 
+  shows "qRHL (Eq0 V) 
         (QInit Q some_constant) (QInit Q some_constant)
-        (Eq (V - QVar ` set Q))"
+        (Eq0 (V - QVar ` set Q))"
   
   by (simp add: assms(1) assms(2) joint_init_eq00 qRHL_def)
 
@@ -310,7 +313,7 @@ lemma fvp_inter_empty:
 
 lemma Eq_split': 
   assumes "is_classical' Y"
-  shows "Eq (X \<union> Y) = Eq X \<sqinter> Eq Y"
+  shows "Eq0 (X \<union> Y) = Eq0 X \<sqinter> Eq0 Y"
   using Eq_split assms
   by (metis Un_commute inf_commute)
 
@@ -788,8 +791,8 @@ lemma change_Eq_precondition:
   assumes "finite V" and "finite W"
   assumes VW_R: "idx12 (V-W) \<sqinter> fvp R = {}"
   assumes WV_R: "idx12 (quantum' (W-V)) \<sqinter> fvp R = {}"
-  assumes qrhl: "qRHL (R \<sqinter> Eq V) c d B"
-  shows "qRHL (R \<sqinter> Eq W) c d B"
+  assumes qrhl: "qRHL (R \<sqinter> Eq0 V) c d B"
+  shows "qRHL (R \<sqinter> Eq0 W) c d B"
 proof -
 
   obtain VWC where VWC: "set VWC = CVar -` (V - W)"
@@ -797,25 +800,25 @@ proof -
 
   define V1 where "V1 = V - CVar ` set VWC \<union> classical' (W-V)"
 
-  have VW_V1: "idx12 (classical' (V - W)) \<inter> fvp (Eq V1) = {}"
+  have VW_V1: "idx12 (classical' (V - W)) \<inter> fvp (Eq0 V1) = {}"
     unfolding V1_def VWC apply (simp add: classical'_def flip: idx12_inter idx12_union)
     using is_classical.cases by blast
 
-  have "R \<sqinter> Eq V1 = top \<sqinter> (R \<sqinter> Eq V1)"
+  have "R \<sqinter> Eq0 V1 = top \<sqinter> (R \<sqinter> Eq0 V1)"
     by simp
-  also have "qRHL (top \<sqinter> (R \<sqinter> Eq V1))
+  also have "qRHL (top \<sqinter> (R \<sqinter> Eq0 V1))
             (Assign VWC some_constant) (Assign VWC some_constant)
-            (Eq (CVar ` set VWC) \<sqinter> (R \<sqinter> Eq V1))"
+            (Eq0 (CVar ` set VWC) \<sqinter> (R \<sqinter> Eq0 V1))"
     apply (rule frame_rule[rotated -1])
         apply (rule assign_Eq)
     using VW_R VW_V1
     by (auto intro!: program.intros fvp_inter_empty simp: X_inter_CVar VWC classical'_def idx12_def simp flip: idx.simps)
-  also have "\<dots> \<le> Eq (CVar ` set VWC) \<sqinter> (R \<sqinter> (Eq (V - CVar ` set VWC)))"
+  also have "\<dots> \<le> Eq0 (CVar ` set VWC) \<sqinter> (R \<sqinter> (Eq0 (V - CVar ` set VWC)))"
     unfolding V1_def
     apply (subst Eq_split')
     apply (simp add: classical'_def is_classical'_def)
     by (metis inf_assoc inf_le1)
-  also have "\<dots> = R \<sqinter> Eq V"
+  also have "\<dots> = R \<sqinter> Eq0 V"
     apply (subst (2) asm_rl[of "V = (CVar ` set VWC) \<union> (V - CVar ` set VWC)"])
     apply (auto simp: VWC)[1]
     apply (subst Eq_split)
@@ -828,7 +831,7 @@ proof -
   also have "Seq (Assign VWC some_constant) d =d= d"
     apply (rule denot_eq_init)
     using VW_overwr by (auto simp add: classical'_def VWC)
-  finally have qrhl_V1: "qRHL (R \<sqinter> Eq V1) c d B"
+  finally have qrhl_V1: "qRHL (R \<sqinter> Eq0 V1) c d B"
     by (auto intro!: program.intros)
 
   define V2 where "V2 = V1 - quantum' (V-W)"
@@ -836,30 +839,30 @@ proof -
   obtain VWQ where VWQ: "set VWQ = QVar -` (V - W)" and "distinct VWQ"
     by (meson assms finite_Diff finite_distinct_list finite_vimageI injI var.simps(1))
 
-  have VW_V2: "idx12 (quantum' (V - W)) \<inter> fvp (Eq V2) = {}"
+  have VW_V2: "idx12 (quantum' (V - W)) \<inter> fvp (Eq0 V2) = {}"
     unfolding V2_def by (simp flip: idx12_inter)
   have V1_V2: "V1 = V2 \<union> QVar ` set VWQ"
     unfolding V2_def V1_def quantum'_def classical'_def VWC VWQ apply auto
     by (metis rangeI var.exhaust)
 
-  have "R \<sqinter> Eq V2 = top \<sqinter> (R \<sqinter> Eq V2)"
+  have "R \<sqinter> Eq0 V2 = top \<sqinter> (R \<sqinter> Eq0 V2)"
     by simp
-  also have "qRHL (top \<sqinter> (R \<sqinter> Eq V2))
+  also have "qRHL (top \<sqinter> (R \<sqinter> Eq0 V2))
             (QInit VWQ some_constant) (QInit VWQ some_constant)
-            (Eq (QVar ` set VWQ) \<sqinter> (R \<sqinter> Eq V2))"
+            (Eq0 (QVar ` set VWQ) \<sqinter> (R \<sqinter> Eq0 V2))"
     apply (rule frame_rule[rotated -1])
     using \<open>distinct VWQ\<close> apply (rule qinit_Eq)
     using VW_R VW_V2 
     by (auto intro!: fvp_inter_empty program.intros simp: X_inter_QVar VWQ quantum'_def idx12_def simp flip: idx.simps)
-  also have "\<dots> \<le> R \<sqinter> Eq (V2 \<union> QVar ` set VWQ)"
-    apply (subst asm_rl[of "Eq (QVar ` set VWQ) \<sqinter> (R \<sqinter> Eq V2) = R \<sqinter> (Eq V2 \<sqinter> Eq (QVar ` set VWQ))"])
+  also have "\<dots> \<le> R \<sqinter> Eq0 (V2 \<union> QVar ` set VWQ)"
+    apply (subst asm_rl[of "Eq0 (QVar ` set VWQ) \<sqinter> (R \<sqinter> Eq0 V2) = R \<sqinter> (Eq0 V2 \<sqinter> Eq0 (QVar ` set VWQ))"])
      apply (simp add: boolean_algebra_cancel.inf2 inf_sup_aci(1))
     apply (rule inf_mono, simp)
     apply (rule Eq_split_leq)
     using VW_V2 
     apply (auto intro!: fvp_inter_empty simp: quantum'_def idx12_def VWQ simp flip: idx.simps)
     by (metis (no_types, lifting) Diff_Diff_Int Diff_iff Un_iff empty_iff imageI is_classical.cases mem_Collect_eq var.distinct(1))
-  also have "\<dots> = R \<sqinter> Eq V1"
+  also have "\<dots> = R \<sqinter> Eq0 V1"
     using V1_V2 by simp
   also note qrhl_V1
   also have "QInit VWQ some_constant; c =d= c"
@@ -868,7 +871,7 @@ proof -
   also have "QInit VWQ some_constant; d =d= d"
     using \<open>distinct VWQ\<close> apply (rule denot_eq_qinit)
     unfolding VWQ using VW_overwr by auto
-  finally have qrhl_V2: "qRHL (R \<sqinter> Eq V2) c d B"
+  finally have qrhl_V2: "qRHL (R \<sqinter> Eq0 V2) c d B"
     by (auto intro!: program.intros)
 
   define V3 where "V3 = V2 \<union> quantum' (W-V)"
@@ -880,15 +883,15 @@ proof -
     apply auto
     by (metis (full_types) is_classical.simps rangeI var.exhaust)
 
-  have "R \<sqinter> Eq V3 = Eq (quantum' V3) \<sqinter> (R \<sqinter> Eq (classical' V3))"
+  have "R \<sqinter> Eq0 V3 = Eq0 (quantum' V3) \<sqinter> (R \<sqinter> Eq0 (classical' V3))"
     apply (subst asm_rl[of "V3 = quantum' V3 \<union> classical' V3"])
     apply (auto simp: quantum'_def classical'_def)[1]
     apply (subst Eq_split')
     apply (simp add: classical'_def is_classical'_def)
     by (simp add: inf_left_commute)
-  also have "qRHL (Eq (quantum' V3) \<sqinter> (R \<sqinter> Eq (classical' V3)))
+  also have "qRHL (Eq0 (quantum' V3) \<sqinter> (R \<sqinter> Eq0 (classical' V3)))
             (QInit WVQ some_constant) (QInit WVQ some_constant)
-            (Eq (quantum' V3 - QVar ` set WVQ) \<sqinter> (R \<sqinter> Eq (classical' V3)))"
+            (Eq0 (quantum' V3 - QVar ` set WVQ) \<sqinter> (R \<sqinter> Eq0 (classical' V3)))"
     apply (rule frame_rule[rotated -1])
       apply (rule joint_init_eq0)
        apply (metis Un_upper2 V3_def WVQ X_inter_QVar image_vimage_eq inf.bounded_iff inf_le2)
@@ -898,11 +901,11 @@ proof -
       apply (metis (no_types, lifting) UnE idx_inj imageE is_classical_QVar mem_Collect_eq)
     using WV_R unfolding quantum'_def idx12_def apply fastforce
     by (metis (no_types, lifting) UnE idx_inj imageE is_classical_QVar mem_Collect_eq)
-  also have "\<dots> = R \<sqinter> Eq (quantum' V3 - QVar ` set WVQ \<union> classical' V3)"
+  also have "\<dots> = R \<sqinter> Eq0 (quantum' V3 - QVar ` set WVQ \<union> classical' V3)"
     apply (subst Eq_split')
     apply (simp add: classical'_def is_classical'_def)
     using inf_sup_aci(3) by blast
-  also have "\<dots> = R \<sqinter> Eq V2"
+  also have "\<dots> = R \<sqinter> Eq0 V2"
     unfolding V2_V3 by simp
   also note qrhl_V2
   also have "QInit WVQ some_constant; c =d= c"
@@ -911,7 +914,7 @@ proof -
   also have "QInit WVQ some_constant; d =d= d"
     using \<open>distinct WVQ\<close> apply (rule denot_eq_qinit)
     using WV_overwr by (auto simp add: WVQ quantum'_def)
-  finally have qrhl_V3: "qRHL (R \<sqinter> Eq V3) c d B"
+  finally have qrhl_V3: "qRHL (R \<sqinter> Eq0 V3) c d B"
     by (auto intro!: program.intros)
 
   have "V3 = W"

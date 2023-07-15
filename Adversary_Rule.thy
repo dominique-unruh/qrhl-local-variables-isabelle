@@ -10,17 +10,21 @@ locale adversary_rule =
   fixes R :: predicate
   fixes aux :: var
   fixes Rv defines "Rv \<equiv> deidx12 (fvp R)"
+  fixes U1 U2 :: operator
+  fixes W1 W2 :: \<open>qvar list\<close>
 begin
 
 definition "subst C = substitute C s"
 definition "subst' C = substitute C s'"
+
+abbreviation \<open>Eq' \<equiv> Eq (U1,U2,W1,W2)\<close>
 
 lemma finite_Rv: "finite Rv"
   unfolding Rv_def deidx12_def apply simp
   unfolding vimage_def[symmetric] 
   by (meson finite_fvp finite_vimageI idx_inj injI)+
 
-abbreviation "qrhlC V C \<equiv> qRHL (R \<sqinter> Eq V) (subst C) (subst' C) (R \<sqinter> Eq V)"
+abbreviation "qrhlC V C \<equiv> qRHL (R \<sqinter> Eq' V) (subst C) (subst' C) (R \<sqinter> Eq' V)"
 
 lemma context_induct[
     params     i and p and           e C1 C2 and   e C and   x C and                      q C and                     C1 C2, 
@@ -48,7 +52,7 @@ lemma adversary_rule0:
   assumes aux_si: "\<And>i. i \<in> holes C \<Longrightarrow> aux \<notin> fv (s i)"
   assumes aux_s'i: "\<And>i. i \<in> holes C \<Longrightarrow> aux \<notin> fv (s' i)"
   assumes finite_Vmid: "finite Vmid"
-  assumes qrhl_s: "\<And>i. i\<in>holes C \<Longrightarrow> qRHL (R \<sqinter> Eq Vmid) (s i) (s' i) (R \<sqinter> Eq Vmid)"
+  assumes qrhl_s: "\<And>i. i\<in>holes C \<Longrightarrow> qRHL (R \<sqinter> Eq' Vmid) (s i) (s' i) (R \<sqinter> Eq' Vmid)"
   assumes aux_Vmid: "aux \<in> Vmid"
   assumes Vmid_V: "Vmid \<supseteq> V \<union> inner C"
   assumes Vmid_R: "Vmid \<inter> Rv \<subseteq> V \<union> covered C"
@@ -66,9 +70,9 @@ proof (induction C arbitrary: V Vmid rule:context_induct)
     by simp
 
   from \<open>fv p \<subseteq> V\<close>
-  have "qRHL (Eq V) p p (Eq V)"
+  have "qRHL (Eq' V) p p (Eq' V)"
     by (rule equal_rule)
-  then have "qRHL (R \<sqinter> Eq V) p p (R \<sqinter> Eq V)"
+  then have "qRHL (R \<sqinter> Eq' V) p p (R \<sqinter> Eq' V)"
     unfolding inf.commute[of R]
     apply (rule frame_rule[rotated -1])
     using R_written \<open>program p\<close>
@@ -101,7 +105,7 @@ next
   from IfTE.prems
   have "CVar ` fve e \<subseteq> V"
     by auto
-  then have Eq_e: "Eq V \<le> Eq (CVar ` fve e)"
+  then have Eq_e: "Eq' V \<le> Eq' (CVar ` fve e)"
     apply (subst asm_rl[of "V = (CVar ` fve e) \<union> (V - CVar ` fve e)"], blast)
     apply (subst Eq_split)
     by (auto simp: is_classical'_def)
@@ -126,7 +130,7 @@ next
   from While.prems
   have "CVar ` fve e \<subseteq> V"
     by simp
-  then have Eq_e: "Eq V \<le> Eq (CVar ` fve e)"
+  then have Eq_e: "Eq' V \<le> Eq' (CVar ` fve e)"
     apply (subst asm_rl[of "V = (CVar ` fve e) \<union> (V - CVar ` fve e)"], blast)
     apply (subst Eq_split)
     by (auto simp: is_classical'_def)
@@ -171,14 +175,14 @@ next
     unfolding subst subst'
     apply (rule_tac joint_local0_rule[rotated -1])
     using xR by (auto simp: Rv_def deidx12_def)
-  then have "qRHL (R \<sqinter> Eq (V-{x}) \<sqinter> Eq (V\<inter>{x}))
+  then have "qRHL (R \<sqinter> Eq' (V-{x}) \<sqinter> Eq' (V\<inter>{x}))
              (subst (Local x C)) (subst' (Local x C))
-             (R \<sqinter> Eq (V-{x}) \<sqinter> Eq (V\<inter>{x}))"
+             (R \<sqinter> Eq' (V-{x}) \<sqinter> Eq' (V\<inter>{x}))"
     apply (rule frame_rule[rotated -1])
     by (auto simp: is_classical'_def subst subst' idx12_def intro!: program.intros)
   then show ?case
     unfolding inf.assoc 
-    unfolding inf.commute[of "Eq (V-{x})"]
+    unfolding inf.commute[of "Eq' (V-{x})"]
     apply (subst (asm) Eq_split[symmetric], simp add: is_classical'_def LocalC.classical)
     apply (subst (asm) Eq_split[symmetric], simp add: is_classical'_def LocalC.classical)
     by (simp add: Un_Diff_Int Un_commute)
@@ -247,7 +251,7 @@ next
     unfolding subst'_def by simp
 
   from LocalQ.prems
-  have qrhl_s: "qRHL (R \<sqinter> Eq Vmid) (s i) (s' i) (R \<sqinter> Eq Vmid)" if "i\<in>holes C" for i
+  have qrhl_s: "qRHL (R \<sqinter> Eq' Vmid) (s i) (s' i) (R \<sqinter> Eq' Vmid)" if "i\<in>holes C" for i
     using that by simp
 
   from LocalQ.prems
@@ -255,7 +259,7 @@ next
     and aux_s'i: "\<And>i. i \<in> holes C \<Longrightarrow> aux \<notin> fv (s' i)"
     by auto
 
-  have qrhl_sr: "qRHL (R \<sqinter> Eq (insert r Vmid)) (s i) (s' i) (R \<sqinter> Eq (insert r Vmid))" 
+  have qrhl_sr: "qRHL (R \<sqinter> Eq' (insert r Vmid)) (s i) (s' i) (R \<sqinter> Eq' (insert r Vmid))" 
     if "i\<in>holes C" for i
     apply (subst asm_rl[of "insert r Vmid = (Vmid-{aux}) \<union> {aux,r}"], 
                (auto simp add: \<open>aux \<in> Vmid\<close>)[1])+
@@ -315,17 +319,20 @@ next
     using \<open>r \<noteq> q\<close> \<open>r \<notin> V\<close>
     by (auto simp: transpose_def q'[symmetric] r'[symmetric])
 
-  have "R \<sqinter> Eq V
+  have "R \<sqinter> Eq' V
         = substp_bij (transpose (idx True q) (idx True r) o
-                   (transpose (idx False q) (idx False r))) (R \<sqinter> Eq V')"
+                   (transpose (idx False q) (idx False r))) (R \<sqinter> Eq' V')"
     apply (subst substp_bij_inter)
       apply (auto intro!: valid_var_subst_comp compatible_idx simp: bij_swap_iff)[2]
     apply (subst substp_bij_id)
        apply (auto intro!: valid_var_subst_comp compatible_idx simp: bij_swap_iff)[3]
      apply (metis idx_q_R idx_r_R transpose_apply_other)
-    using substp_bij_Eq  q' r' apply auto
-    by (metis \<open>compatible q r\<close> \<open>r \<noteq> q\<close> swap_V')
-  also have \<open>\<dots> = substp (transpose (idx True q) (idx True r)) (substp (transpose (idx False q) (idx False r)) (R \<sqinter> Eq V'))\<close>
+    unfolding q' r' apply (subst substp_bij_Eq)
+    subgoal sorry (* TODO *)
+    subgoal sorry (* TODO *)
+  using \<open>r \<noteq> q\<close> q' r' swap_V' by auto
+
+  also have \<open>\<dots> = substp (transpose (idx True q) (idx True r)) (substp (transpose (idx False q) (idx False r)) (R \<sqinter> Eq' V'))\<close>
     apply (subst substp_bij_comp[symmetric])
         apply auto[4]
     apply (subst substp_substp_bij[where \<tau>=\<open>transpose (idx True q) (idx True r)\<close>])
@@ -363,7 +370,7 @@ next
   have Vmid_s: "Vmid \<inter> (fv (s i) \<union> fv (s' i)) \<subseteq> classical' (overwr (s i) \<inter> overwr (s' i)) \<union> covered C \<union> V"
     and Vmid_R: "Vmid \<inter> Rv \<subseteq> V \<union> covered C"
     and Vmid_V: "V \<union> inner C \<subseteq> Vmid"
-    and qrhl_s: "qRHL (R \<sqinter> Eq Vmid) (s i) (s' i) (R \<sqinter> Eq Vmid)"
+    and qrhl_s: "qRHL (R \<sqinter> Eq' Vmid) (s i) (s' i) (R \<sqinter> Eq' Vmid)"
     by simp_all
 
   from Vmid_s
@@ -395,7 +402,7 @@ next
     unfolding idx12_def by auto
   then have "idx12 X \<inter> fvp R = {}"
     using Vmid_R unfolding Rv_def deidx12_def idx12_def Vmid_XYQ idx12_union by auto
-  ultimately have 1: "idx12 X \<inter> fvp (R \<sqinter> Eq (V \<union> Y \<union> Q)) = {}"
+  ultimately have 1: "idx12 X \<inter> fvp (R \<sqinter> Eq' (V \<union> Y \<union> Q)) = {}"
     apply (rule_tac fvp_inter_empty)
     by (auto simp add: idx12_def)
 
@@ -407,20 +414,20 @@ next
     unfolding idx12_def by auto
   then have "idx12 Y \<inter> fvp R = {}"
     using Vmid_R unfolding Rv_def idx12_def deidx12_def Vmid_XYQ idx12_union by auto
-  ultimately have 2: "idx12 Y \<inter> fvp (R \<sqinter> Eq (V \<union> Q)) = {}"
+  ultimately have 2: "idx12 Y \<inter> fvp (R \<sqinter> Eq' (V \<union> Q)) = {}"
     apply (rule_tac fvp_inter_empty)
     by (auto simp add: idx12_def)
   have siY: "fv (s i) \<inter> Y = {}" and s'iY: "fv (s' i) \<inter> Y = {}"
     using Vmid_s unfolding Y_def classical'_def by auto
 
-  have "R \<sqinter> Eq (V \<union> Q) \<sqinter> Eq Y = R \<sqinter> Eq (V \<union> Y \<union> Q)"
+  have "R \<sqinter> Eq' (V \<union> Q) \<sqinter> Eq' Y = R \<sqinter> Eq' (V \<union> Y \<union> Q)"
     apply (subst asm_rl[of "V \<union> Y \<union> Q = Y \<union> (V \<union> Q)"], blast)
     apply (subst Eq_split[where X=Y], simp)
     by (simp add: inf_commute inf_left_commute)
-  also have "qRHL (R \<sqinter> Eq (V \<union> Y \<union> Q)) (Assign Xlist some_constant) (Assign Xlist some_constant) (R \<sqinter> Eq Vmid)"
-    apply (subst asm_rl[of "R \<sqinter> Eq Vmid = Eq (CVar ` set Xlist) \<sqinter> (R \<sqinter> Eq (V \<union> Y \<union> Q))"])
-     apply (metis Eq_split Vmid_XYQ Xlist class_X inf_left_commute sup_commute sup_left_commute)
-    apply (subst asm_rl[of "(R \<sqinter> Eq (V \<union> Y \<union> Q)) = top \<sqinter> (R \<sqinter> Eq (V \<union> Y \<union> Q))"], simp)
+  also have "qRHL (R \<sqinter> Eq' (V \<union> Y \<union> Q)) (Assign Xlist some_constant) (Assign Xlist some_constant) (R \<sqinter> Eq' Vmid)"
+    apply (subst asm_rl[of "R \<sqinter> Eq' Vmid = Eq' (CVar ` set Xlist) \<sqinter> (R \<sqinter> Eq' (V \<union> Y \<union> Q))"])
+     apply (metis Eq_split Vmid_XYQ Xlist class_X inf_left_commute sup_commute sup_left_commute) X
+    apply (subst asm_rl[of "(R \<sqinter> Eq' (V \<union> Y \<union> Q)) = top \<sqinter> (R \<sqinter> Eq' (V \<union> Y \<union> Q))"], simp)
     apply (rule frame_rule)
     using 1 apply (auto simp: idx12_def Xlist[symmetric] intro!: program.intros) [2]
     by (rule assign_Eq)
@@ -432,12 +439,12 @@ next
   also have "Assign Xlist some_constant; subst' C =d= subst' C"
     apply (rule denot_eq_init)
     unfolding subst'_def apply auto using X_overwr_si' Xlist by blast
-  also have "R \<sqinter> Eq Vmid \<le> R \<sqinter> Eq (V \<union> Q)"
+  also have "R \<sqinter> Eq' Vmid \<le> R \<sqinter> Eq' (V \<union> Q)"
     apply (rule inf_mono, simp)
     apply (rule weaken_Eq)
     using class_X Vmid_XYQ is_classical'_def Q_def
-    by blast+
-  finally have "qRHL (R \<sqinter> Eq (V \<union> Q) \<sqinter> Eq Y) (subst C) (subst' C) (R \<sqinter> Eq (V \<union> Q))"
+    by blast+ x
+  finally have "qRHL (R \<sqinter> Eq' (V \<union> Q) \<sqinter> Eq' Y) (subst C) (subst' C) (R \<sqinter> Eq' (V \<union> Q))"
     by auto
 
   then have qrhl_VQ: "qrhlC (V \<union> Q) C"
@@ -455,7 +462,7 @@ next
       aux_si aux_s'i sQ s'Q
           apply (auto simp: is_quantum'_def idx12_def subst_def subst'_def Rv_def deidx12_def)[6]
     using qrhl_VQ \<open>aux \<in> V \<union> Q\<close>
-    by (metis C_def Un_insert_right insert_Diff_single insert_absorb sup_commute)
+    by (metis C_def Un_insert_right insert_Diff_single insert_absorb sup_commute) x
 
   then show ?case
     by (simp add: Un_Diff_Int)
@@ -472,7 +479,7 @@ lemma adversary_rule:
   assumes finite_Vin: "finite Vin"
   assumes aux_si: "\<And>i. i \<in> holes C \<Longrightarrow> aux \<notin> fv (s i)"
   assumes aux_s'i: "\<And>i. i \<in> holes C \<Longrightarrow> aux \<notin> fv (s' i)"
-  assumes qrhl_s: "\<And>i. i \<in> holes C \<Longrightarrow> qRHL (R \<sqinter> Eq Vmid) (s i) (s' i) (R \<sqinter> Eq Vmid)"
+  assumes qrhl_s: "\<And>i. i \<in> holes C \<Longrightarrow> qRHL (R \<sqinter> Eq' Vmid) (s i) (s' i) (R \<sqinter> Eq' Vmid)"
   assumes aux_Vmid: "aux \<in> Vmid"
   assumes inner_Vmid: "inner C \<subseteq> Vmid"
   assumes Vout_Vmid: "Vout \<subseteq> Vmid"
@@ -491,7 +498,7 @@ lemma adversary_rule:
   assumes R_inner: "Rv \<inter> inner C = {}"
   assumes R_written: "Rv \<inter> written C = {}"
 
-  shows "qRHL (R \<sqinter> Eq Vin) (subst C) (subst' C) (R \<sqinter> Eq Vout)"
+  shows "qRHL (R \<sqinter> Eq' Vin) (subst C) (subst' C) (R \<sqinter> Eq' Vout)"
 proof -
   define V where 
     "V = Vmid \<inter> (overwr C \<union> Vin) \<inter> (Vin \<union> - Rv) \<inter> (Vout \<union> range CVar)"
@@ -543,12 +550,12 @@ proof -
   have \<open>qrhlC V C\<close>
     by (rule adversary_rule0[where Vmid=Vmid])
 
-  then have \<open>qRHL (R \<sqinter> Eq Vin) (subst C) (subst' C) (R \<sqinter> Eq V)\<close>
+  then have \<open>qRHL (R \<sqinter> Eq' Vin) (subst C) (subst' C) (R \<sqinter> Eq' V)\<close>
     apply (rule change_Eq_precondition[rotated -1])
     using V_Vin_overwr overwr_subst subst'_def subst_def apply auto[1]
     using Vin_V_overwr overwr_subst subst'_def subst_def apply auto[1] 
     using \<open>finite V\<close> \<open>finite Vin\<close> V_Vin_R Vin_V_R by simp_all
-  also have "R \<sqinter> Eq V \<le> R \<sqinter> Eq Vout"
+  also have "R \<sqinter> Eq' V \<le> R \<sqinter> Eq' Vout"
     apply (rule inf_mono, simp)
     apply (subst asm_rl[of "V = (V-Vout) \<union> Vout"])
     using Vout_V apply auto[1]

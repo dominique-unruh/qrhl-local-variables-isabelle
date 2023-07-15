@@ -279,8 +279,15 @@ instance predicate :: top..
 
 axiomatization fvp :: "predicate \<Rightarrow> var set"
 
-text \<open>The meaning of \<^term>\<open>Eq V\<close> is $V_1 \equiv_q V_2$.\<close>
-axiomatization Eq :: "var set \<Rightarrow> predicate"
+text \<open>Represents an operator\<close>
+typedecl operator
+axiomatization identity :: operator
+
+text \<open>The meaning of \<^term>\<open>Eq (U,V,W1,W2) V\<close> is $(U\<otimes>I)W1V_1 \equiv_q (V\<otimes>I)W2V_2$.\<close>
+axiomatization Eq :: "(operator \<times> operator \<times> qvar list \<times> qvar list) \<Rightarrow> var set \<Rightarrow> predicate"
+
+(* TODO remove *)
+definition Eq0 where \<open>Eq0 = Eq (identity,identity,[],[])\<close>
 
 text \<open>Applying variable substitutions on predicates. This constant is only define when the substitution
   is a bijection. (This is a simpler concept and stating all assumptions only for this case makes
